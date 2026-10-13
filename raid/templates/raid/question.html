@@ -13,6 +13,7 @@
     {% if not clear %}<p class="code-tip">🔎 코드에서 <b>버그가 있는 줄 하나</b>를 먼저 선택해 줘.</p>
     <div class="bug-next"><button class="btn-primary" type="button" id="reveal-options" disabled>수정안 4지선다 보기 →</button><span id="line-status" role="status" aria-live="polite">먼저 코드 줄을 선택해 줘.</span></div>{% endif %>
   </div>
+  {% endif %}
   {% if clear %}
   <div class="answer-reveal"><span class="answer-reveal-icon">🏅</span><div><h2>DEBUG COMPLETE!</h2><p>정확한 오류 위치와 수정 코드를 확인해 봐.</p><p class="explanation"><b>수정한 {{correct_line}}번째 줄</b><br><code>{{question.accepted_patches.0}}</code></p><p class="explanation"><b>왜 틀렸을까?</b><br>{{question.explanation}}</p><p class="damage-note">이 미션의 보스 공격 기여: {{clear.damage}} HP</p></div></div>
   {% else %}
