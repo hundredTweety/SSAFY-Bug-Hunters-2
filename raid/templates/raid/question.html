@@ -1,59 +1,85 @@
 {% extends 'raid/base.html' %}
-{% block title %}{{question.title}} | BUG HUNTERS{% endblock %}
+{% block title %}{{ question.title }} | BUG HUNTERS{% endblock %}
 {% block content %}
-<div class="backline"><a href="{% url 'home' %}#missions">← 미션 목록</a><span>MISSION {{question.code}}</span></div>
+<div class="backline"><a href="{% url 'home' %}#missions">← 미션 목록</a><span>MISSION {{ question.code }}</span></div>
 <div class="mission-page-grid"><section class="question-shell">
-  <div class="question-header"><span class="eyebrow">{{category_name}} · {{question.concept}}</span><span class="badge badge-{% if question.difficulty == 1 %}easy{% elif question.difficulty == 2 %}normal{% else %}hard{% endif %}">{% if question.difficulty == 1 %}EASY{% elif question.difficulty == 2 %}NORMAL{% else %}HARD{% endif %}</span></div>
-  <div class="question-body"><h1>{{question.title}}</h1><p>{{question.body}}</p>
+  <div class="question-header"><span class="eyebrow">{{ category_name }} · {{ question.concept }}</span><span class="badge badge-{% if question.difficulty == 1 %}easy{% elif question.difficulty == 2 %}normal{% else %}hard{% endif %}">{% if question.difficulty == 1 %}EASY{% elif question.difficulty == 2 %}NORMAL{% else %}HARD{% endif %}</span></div>
+  <div class="question-body"><h1>{{ question.title }}</h1><p>{{ question.body }}</p>
+    {% if not clear and not line_verified %}
+    <div class="bug-step-intro"><span class="step-tag">STEP 1 / 2</span><div><strong>코드에서 버그가 있는 줄을 찾아봐!</strong><span>정답 위치를 찾아야 수정안 4개가 나타나.</span></div></div>
+    {% endif %}
     <div class="code-window"><div class="code-toolbar"><div class="window-dots"><i></i><i></i><i></i></div><span>buggy.py · 논리 오류 1개</span><span>Python 3</span></div>
-      <div class="code-list" aria-label="버그가 있는 코드 줄 선택">{% for ln in code_lines %}
-      {% if clear %}<div class="code-row code-readonly {% if correct_line == ln.num %}code-fixed{% endif %}"><span class="line-number">{{ln.num|stringformat:'02d'}}</span><code>{{ln.content}}</code></div>
-      {% else %}<label class="code-row code-selectable"><input type="radio" name="line" form="mission-form" value="{{ln.num}}" required aria-label="{{ln.num}}번 줄"><span class="line-number">{{ln.num|stringformat:'02d'}}</span><code>{{ln.content}}</code></label>{% endif %}
-      {% endfor %}</div></div>
-    {% if not clear %}<p class="code-tip">🔎 코드에서 <b>버그가 있는 줄 하나</b>를 먼저 선택해 줘.</p>
-    <div class="bug-next"><button class="btn-primary" type="button" id="reveal-options" disabled>수정안 4지선다 보기 →</button><span id="line-status" role="status" aria-live="polite">먼저 코드 줄을 선택해 줘.</span></div>{% endif %>
-  </div>
-  {% endif %}
-  {% if clear %}
-  <div class="answer-reveal"><span class="answer-reveal-icon">🏅</span><div><h2>DEBUG COMPLETE!</h2><p>정확한 오류 위치와 수정 코드를 확인해 봐.</p><p class="explanation"><b>수정한 {{correct_line}}번째 줄</b><br><code>{{question.accepted_patches.0}}</code></p><p class="explanation"><b>왜 틀렸을까?</b><br>{{question.explanation}}</p><p class="damage-note">이 미션의 보스 공격 기여: {{clear.damage}} HP</p></div></div>
-  {% else %}
-  <form id="mission-form" class="debug-form" method="post" action="{% url 'submit' question.pk %}">{% csrf_token %}
-    <div class="debug-step" id="choice-step" hidden><div class="debug-heading"><span class="step-tag">STEP 2 / 2</span><h3 id="choice-heading" tabindex="-1">선택한 줄을 어떻게 수정할까?</h3></div>
-      <p class="field-desc"><b><span id="chosen-line"></span>번 줄</b>을 선택했어. 4개 수정안 중 하나를 골라 줘. 줄과 수정안이 모두 맞아야 정답이야!</p>
-      <div class="mcq-options" role="radiogroup" aria-label="4지선다 정답 선택">
-      {% for index, option in choices %}
-      <label class="mcq-option"><input type="radio" name="choice" value="{{index}}" required>
-        <span class="mcq-letter">{{forloop.counter}}</span><code>{{option}}</code>
-      </label>
+      <div class="code-list" role="group" aria-label="코드에서 버그 줄 선택">
+      {% for ln in code_lines %}
+        {% if clear or line_verified %}
+          <div class="code-row code-readonly {% if correct_line == ln.num %}code-fixed{% endif %}"><span class="line-number">{{ ln.num|stringformat:'02d' }}</span><code>{{ ln.content }}</code></div>
+        {% else %}
+          <label class="code-row code-selectable"><input type="radio" name="line" value="{{ ln.num }}" form="line-form" required aria-label="{{ ln.num }}번 줄"><span class="line-number">{{ ln.num|stringformat:'02d' }}</span><code>{{ ln.content }}</code></label>
+        {% endif %}
       {% endfor %}
       </div>
     </div>
-    <input id="hint-used" type="hidden" name="hint_used" value="0">
-    <div class="hint-area"><button type="button" class="hint-button" id="hint-toggle" aria-expanded="false">💡 힌트 보기 (자유롭게)</button><p id="hint-text" class="hint-text" hidden>{{question.hint}}</p></div>
-    <div class="submit-row"><p>현재 시도 횟수 {{attempts}}회<br><small>오답이어도 다시 고를 수 있어.</small></p><button class="btn-primary" type="submit">🐛 정답 제출하고 공격 →</button></div>
-  </form>
+    {% if not clear and not line_verified %}
+      <p class="code-tip">🔎 코드를 분석하고 잘못된 줄을 클릭해 줘. 정답이면 다음 단계로 넘어가!</p>
+      <form id="line-form" class="bug-next" method="post" action="{% url 'check_line' question.pk %}">{% csrf_token %}
+        <button class="btn-primary" id="check-line-button" type="submit" disabled>버그 위치 확인 →</button>
+        <span id="line-status" role="status" aria-live="polite">먼저 줄을 선택해 줘.</span>
+      </form>
+    {% endif %}
+  </div>
+  {% if clear %}
+    <div class="answer-reveal"><span class="answer-reveal-icon">🏅</span><div>
+      <h2>DEBUG COMPLETE!</h2><p>버그를 정확하게 찾아 고쳤어!</p>
+      <p class="explanation"><b>버그 위치: {{ correct_line }}번 줄</b><br><code>{{ question.accepted_patches.0 }}</code></p>
+      <p class="explanation"><b>왜 틀렸을까?</b><br>{{ question.explanation }}</p>
+      <p class="damage-note">이 미션의 보스 공격 기여: {{ clear.damage }} HP</p>
+      <div class="bug-next">
+        {% if next_question %}
+          <a class="btn-primary" href="{% url 'question' next_question.pk %}">다음 문제 풀기 →</a>
+        {% else %}
+          <a class="btn-primary" href="{% url 'home' %}#missions">모든 문제 해결! 미션 목록으로 →</a>
+        {% endif %}
+        <a class="outline-button" href="{% url 'home' %}#missions">미션 목록</a>
+      </div>
+    </div></div>
+  {% elif line_verified %}
+    <form id="mission-form" class="debug-form" method="post" action="{% url 'submit' question.pk %}">{% csrf_token %}
+      <section class="debug-step" id="choice-step"><div class="debug-heading"><span class="step-tag">STEP 2 / 2</span><h3>버그 위치 발견! 어떻게 수정할까?</h3></div>
+      <p class="field-desc"><b>{{ correct_line }}번 줄</b>에서 버그를 찾아냈어. 4개 수정안 중 올바른 코드를 골라 줘.</p>
+      <div class="mcq-options" role="radiogroup" aria-label="수정안 4지선다">
+      {% for index, option in choices %}
+        <label class="mcq-option"><input type="radio" name="choice" value="{{ index }}" required><span class="mcq-letter">{{ forloop.counter }}</span><code>{{ option }}</code></label>
+      {% endfor %}
+      </div>
+      <input id="hint-used" type="hidden" name="hint_used" value="0">
+      <div class="hint-area"><button type="button" class="hint-button" id="hint-toggle" aria-expanded="false">💡 힌트 보기 (자유롭게)</button><p id="hint-text" class="hint-text" hidden>{{ question.hint }}</p></div>
+      <div class="submit-row"><p>현재 시도 횟수 {{ attempts }}회<br><small>오답이어도 다시 수정할 수 있어.</small></p><button class="btn-primary" type="submit">🐛 수정안 제출하고 공격 →</button></div>
+    </section>
+    </form>
   {% endif %}
 </section>
-<aside class="question-aside"><div class="info-card"><span class="eyebrow">MISSION GUIDE</span><h3>이 미션의 규칙</h3><p>1. 코드에서 버그가 있는 줄 선택<br>2. 수정안 4개 중 하나 선택<br>3. 두 답 모두 정답이면 보스 HP 감소!<br>4. 틀려도 재도전 가능</p></div><div class="info-card"><span class="eyebrow">BOSS STATUS</span><h3>❤️ {{state.remaining_hp}} / {{state.max_hp}} HP</h3><p>개인 순위 없이 반 전체가 하나의 HP를 공유해.</p></div><a class="outline-button" href="{% url 'home' %}#missions">다른 미션 선택 ↗</a></aside>
+<aside class="question-aside"><div class="info-card"><span class="eyebrow">MISSION GUIDE</span><h3>미션 진행 방법</h3><p>1. 버그가 있는 코드 줄을 선택<br>2. 정답 줄이면 수정안 4지선다 공개<br>3. 올바른 수정안을 선택하면 보스 공격<br>4. 정답 후 다음 미션으로 이동</p></div>
+<div class="info-card"><span class="eyebrow">BOSS STATUS</span><h3>❤️ {{ state.remaining_hp }} / {{ state.max_hp }} HP</h3><p>한 문제 정답당 최대 20 HP 감소. 보스 체력은 모두가 공유해.</p></div>
+<a class="outline-button" href="{% url 'home' %}#missions">다른 미션 선택 ↗</a></aside>
 </div>
 {% endblock %}
-{% block scripts %}<script>
+{% block scripts %}
+<script>
 (function(){
-const rows=document.querySelectorAll('input[name="line"]'),button=document.getElementById('reveal-options'),step=document.getElementById('choice-step');
-rows.forEach(r=>r.addEventListener('change',()=>{
- button.disabled=false;
- step.hidden=true;
- document.querySelectorAll('input[name=choice]').forEach(c=>c.checked=false);
- document.getElementById('line-status').textContent=r.value+'번 줄 선택됨';
-}));
-if(button)button.addEventListener('click',()=>{
- const chosen=document.querySelector('input[name="line"]:checked');
- if(!chosen)return;
- document.getElementById('chosen-line').textContent=chosen.value;
- step.hidden=false;
- document.getElementById('choice-heading').focus({preventScroll:true});
- step.scrollIntoView({behavior:'smooth',block:'start'});
-});
-const b=document.getElementById('hint-toggle');if(b)b.addEventListener('click',()=>{const t=document.getElementById('hint-text');t.hidden=!t.hidden;b.setAttribute('aria-expanded',String(!t.hidden));if(!t.hidden)document.getElementById('hint-used').value='1'});
+  const lineRadios=document.querySelectorAll('input[name="line"]');
+  const button=document.getElementById('check-line-button');
+  const status=document.getElementById('line-status');
+  lineRadios.forEach(r=>r.addEventListener('change',()=>{
+    button.disabled=false;
+    status.textContent=r.value+'번 줄 선택됨. 확인해 봐!';
+  }));
+  const hint=document.getElementById('hint-toggle');
+  if(hint)hint.addEventListener('click',()=>{
+    const explanation=document.getElementById('hint-text');
+    explanation.hidden=!explanation.hidden;
+    hint.setAttribute('aria-expanded',String(!explanation.hidden));
+    if(!explanation.hidden)document.getElementById('hint-used').value='1';
+  });
 })();
-</script>{% endblock %}
+</script>
+{% endblock %}
