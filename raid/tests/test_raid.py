@@ -21,8 +21,9 @@ class BugHuntersTests(TestCase):
     def submit(self,code,patch_ok=True,case_ok=True,line_ok=True):
         q=Question.objects.get(code=code)
         expected=target_line(q)
+        line=expected if line_ok else (1 if expected != 1 else 2)
+        self.client.post(reverse('check_line',args=[q.pk]),{'line':str(line)})
         return self.client.post(reverse('submit',args=[q.pk]),{
-            'line':str(expected if line_ok else (1 if expected != 1 else 2)),
             'choice':str(q.choices.index(q.accepted_patches[0]) if patch_ok else next(i for i,v in enumerate(q.choices) if v != q.accepted_patches[0])),
         })
 
@@ -32,7 +33,8 @@ class BugHuntersTests(TestCase):
         for n, nickname in enumerate(('헌터가','헌터나'),start=1):
             client=Client()
             self.assertEqual(client.post(reverse('join'),{'nickname':nickname,'consent':'yes'}).status_code,302)
-            self.assertEqual(client.post(reverse('submit',args=[q.pk]),{'choice':str(choice),'line':str(target_line(q))}).status_code,302)
+            self.assertEqual(client.post(reverse('check_line',args=[q.pk]),{'line':str(target_line(q))}).status_code,302)
+            self.assertEqual(client.post(reverse('submit',args=[q.pk]),{'choice':str(choice)}).status_code,302)
             self.assertEqual(client.get(reverse('api_status')).json()['hp'],1000-20*n)
         self.assertEqual(Player.objects.count(),2)
         self.assertEqual(Clear.objects.filter(damage=20).count(),2)
@@ -42,8 +44,7 @@ class BugHuntersTests(TestCase):
         self.join()
         self.submit('A01',line_ok=False)
         self.assertEqual(Clear.objects.count(),0)
-        self.assertEqual(Attempt.objects.count(),1)
-        self.assertFalse(Attempt.objects.first().is_correct)
+        self.assertEqual(Attempt.objects.count(),0)
         self.assertEqual(RaidState.objects.get(pk=1).remaining_hp,1000)
         self.submit('A01')
         self.assertEqual(Clear.objects.count(),1)
@@ -54,9 +55,45 @@ class BugHuntersTests(TestCase):
         q=Question.objects.get(code='A01')
         choice=q.choices.index(q.accepted_patches[0])
         for line in ('','0','999','wrong'):
-            self.client.post(reverse('submit',args=[q.pk]),{'choice':str(choice),'line':line})
+            self.client.post(reverse('check_line',args=[q.pk]),{'line':line})
+            self.client.post(reverse('submit',args=[q.pk]),{'choice':str(choice)})
         self.assertEqual(Attempt.objects.count(),0)
         self.assertEqual(Clear.objects.count(),0)
+
+    def test_line_check_blocks_options_until_correct(self):
+        self.join()
+        q=Question.objects.get(code='A01')
+        correct=target_line(q)
+        wrong=1 if correct!=1 else 2
+        self.client.post(reverse('check_line',args=[q.pk]),{'line':str(wrong)})
+        page=self.client.get(reverse('question',args=[q.pk]))
+        self.assertNotContains(page,'name="choice"')
+        self.assertNotContains(page,q.accepted_patches[0])
+        self.client.post(reverse('check_line',args=[q.pk]),{'line':str(correct)})
+        page=self.client.get(reverse('question',args=[q.pk]))
+        self.assertContains(page,'name="choice"',count=4)
+        self.assertEqual(Attempt.objects.count(),0)
+
+    def test_direct_choice_post_without_verified_line_is_rejected(self):
+        self.join()
+        q=Question.objects.get(code='A01')
+        self.client.post(reverse('submit',args=[q.pk]),{
+            'choice':str(q.choices.index(q.accepted_patches[0])),
+            'line':str(target_line(q)),
+        })
+        self.assertEqual(Attempt.objects.count(),0)
+        self.assertEqual(Clear.objects.count(),0)
+
+    def test_next_question_skips_already_cleared(self):
+        self.join()
+        q=Question.objects.get(code='A01')
+        self.submit('A01')
+        response=self.client.get(reverse('question',args=[q.pk]))
+        self.assertContains(response,'다음 문제 풀기')
+        next_question=response.context['next_question']
+        self.assertIsNotNone(next_question)
+        self.assertNotEqual(next_question.pk,q.pk)
+        self.assertContains(response,reverse('question',args=[next_question.pk]))
 
     def test_first_clear_damage_only_once(self):
         self.join()
@@ -78,9 +115,13 @@ class BugHuntersTests(TestCase):
         self.join()
         q=Question.objects.get(code='A06')
         page=self.client.get(reverse('question',args=[q.pk]))
-        self.assertContains(page,'name="choice"',count=4)
+        self.assertNotContains(page,'name="choice"')
         self.assertContains(page,'name="line"')
-        self.assertContains(page,'id="choice-step" hidden')
+        self.assertNotContains(page,'id="choice-step"')
+        self.client.post(reverse('check_line',args=[q.pk]),{'line':str(target_line(q))})
+        page=self.client.get(reverse('question',args=[q.pk]))
+        self.assertContains(page,'name="choice"',count=4)
+        self.assertNotContains(page,'name="line"')
         self.assertNotContains(page,'name="patch"')
         self.assertNotContains(page,'name="counterexample"')
         self.submit('A06',patch_ok=False)
@@ -100,6 +141,7 @@ class BugHuntersTests(TestCase):
     def test_out_of_range_choice_is_not_accepted(self):
         self.join()
         q=Question.objects.get(code='A01')
+        self.client.post(reverse('check_line',args=[q.pk]),{'line':str(target_line(q))})
         self.client.post(reverse('submit',args=[q.pk]),{'choice':'99'})
         self.assertEqual(Attempt.objects.count(),0)
 
@@ -122,7 +164,7 @@ class BugHuntersTests(TestCase):
         self.join()
         q=Question.objects.get(code='A06')
         page=self.client.get(reverse('question',args=[q.pk])).content.decode()
-        self.assertEqual(page.count('name="choice"'),4)
+        self.assertEqual(page.count('name="choice"'),0)
         self.assertIn('name="line"',page)
         self.assertNotIn(q.explanation,page)
 
