@@ -56,7 +56,7 @@ class BugHuntersTests(TestCase):
         self.join()
         q=Question.objects.get(code='A06')
         page=self.client.get(reverse('question',args=[q.pk]))
-        self.assertContains(page,'name="choice"',count=4)
+        self.assertEqual(page.count('name="choice"'),4)
         self.assertNotContains(page,'name="patch"')
         self.assertNotContains(page,'name="counterexample"')
         self.submit('A06',patch_ok=False)
