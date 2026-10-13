@@ -22,6 +22,7 @@ class Question(models.Model):
     buggy_code = models.TextField()
     original_line = models.TextField()
     accepted_patches = models.JSONField()
+    choices = models.JSONField(default=list)  # Exactly four authored patches; one correct
     case_options = models.JSONField()
     counterexample_index = models.PositiveSmallIntegerField()
     hint = models.TextField()
@@ -46,6 +47,7 @@ class Attempt(models.Model):
     selected_line = models.PositiveIntegerField(default=0)
     patch_text = models.CharField(max_length=300,blank=True)
     selected_case = models.PositiveSmallIntegerField(null=True,blank=True)
+    selected_choice = models.PositiveSmallIntegerField(null=True,blank=True)
     patch_correct = models.BooleanField(default=False)
     case_correct = models.BooleanField(default=False)
     hint_used = models.BooleanField(default=False)

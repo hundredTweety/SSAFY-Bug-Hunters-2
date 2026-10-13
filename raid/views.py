@@ -93,13 +93,10 @@ def question_detail(request,pk):
     correct_line=target_line(question)
     for num, content in enumerate(question.buggy_code.splitlines(),start=1):
         code_lines.append({'num':num,'content':content})
-    cases=[{'num':i,'label':chr(65+i),'data':json.dumps(c['input'],ensure_ascii=False),
-            'expected':json.dumps(c['expected'],ensure_ascii=False)}
-           for i,c in enumerate(question.case_options)]
     return render(request,'raid/question.html',{
         'question':question,'player':player,'clear':clear,'attempts':attempts,'state':state,
-        'code_lines':code_lines,'cases':cases,
-        'show_case':question.difficulty>=2,'correct_line':correct_line if clear else None,
+        'code_lines':code_lines,'correct_line':correct_line if clear else None,
+        'choices':list(enumerate(question.choices)),
         'category_name':question.get_category_display(),
     })
 
@@ -112,20 +109,20 @@ def submit_answer(request,pk):
     if Clear.objects.filter(player=player,question=question).exists():
         messages.info(request,'이미 해결했어! 다른 미션에도 도전해 봐.')
         return redirect('question',pk=pk)
-    patch=(request.POST.get('patch') or '').strip()
-    raw_line=request.POST.get('line','')
-    if not raw_line.isdigit() or len(patch)>300 or not patch or '\n' in patch or '\r' in patch:
-        messages.error(request,'수정할 줄을 선택하고, 교체할 코드 한 줄을 입력해 줘.')
+    raw_choice=(request.POST.get('choice') or '').strip()
+    if not raw_choice.isdigit() or len(question.choices)!=4:
+        messages.error(request,'4개 보기 중 하나를 선택해 줘.')
         return redirect('question',pk=pk)
-    line=int(raw_line)
-    raw_case=request.POST.get('counterexample','')
-    selected_case=int(raw_case) if raw_case.isdigit() else None
-    if question.difficulty>=2 and (selected_case is None or not 0<=selected_case<len(question.case_options)):
-        messages.error(request,'오류가 발생하는 입력도 하나 선택해 줘.')
+    selected_choice=int(raw_choice)
+    if not 0<=selected_choice<4:
+        messages.error(request,'4개 보기 중 하나를 선택해 줘.')
         return redirect('question',pk=pk)
+    # Trust only the server-side option list; never execute or accept arbitrary submitted Python.
+    patch=question.choices[selected_choice]
+    line=target_line(question)
     patch_ok=check_patch(question,line,patch)
-    case_ok=(question.difficulty==1 or selected_case==question.counterexample_index)
-    is_correct=patch_ok and case_ok
+    case_ok=True  # MCQ replaces the former counterexample round.
+    is_correct=patch_ok
     # Row lock and all writes inside one transaction (PostgreSQL recommended in deployment).
     ensure_state()
     with transaction.atomic():
@@ -134,7 +131,8 @@ def submit_answer(request,pk):
             return redirect('question',pk=pk)
         Attempt.objects.create(
             player=player,question=question,selected_line=line,patch_text=patch,
-            selected_case=selected_case,patch_correct=patch_ok,case_correct=case_ok,
+            selected_case=None,selected_choice=selected_choice,
+            patch_correct=patch_ok,case_correct=case_ok,
             hint_used=request.POST.get('hint_used')=='1',is_correct=is_correct,
         )
         if is_correct:
@@ -148,10 +146,7 @@ def submit_answer(request,pk):
             else:
                 messages.success(request,'버그 수정 성공! 추가 공격 횟수와 무관하게 학습 기록은 남았어.')
         else:
-            if not patch_ok:
-                messages.error(request,'아직 버그가 남아 있어. 수정할 줄과 코드를 다시 점검해 봐.')
-            else:
-                messages.error(request,'수정 코드는 맞았어! 어떤 입력에서 원본 코드가 실패하는지 다시 생각해 봐.')
+            messages.error(request,'아직 버그가 남아 있어. 코드를 다시 읽고 다른 수정안을 골라 봐!')
     return redirect('question',pk=pk)
 
 def results(request):
@@ -176,7 +171,7 @@ def export_results(request):
     response['Content-Disposition']='attachment; filename="bughunters_first_attempts.csv"'
     response.write('\ufeff')
     writer=csv.writer(response)
-    writer.writerow(['범주','개념','닉네임','문제 코드','난이도','첫 제출 정답','패치 정확','반례 정확','힌트 사용','제출 시각'])
+    writer.writerow(['범주','개념','닉네임','문제 코드','난이도','첫 제출 정답','선택한 보기(0~3)','힌트 사용','제출 시각'])
     seen=set()
     for a in Attempt.objects.select_related('player','question').order_by('id'):
         key=(a.player_id,a.question_id)
@@ -184,7 +179,8 @@ def export_results(request):
         seen.add(key)
         writer.writerow([a.question.get_category_display(),a.question.concept,a.player.nickname,
                          a.question.code,a.question.difficulty,int(a.is_correct),
-                         int(a.patch_correct),int(a.case_correct),int(a.hint_used),a.created_at.isoformat()])
+                         a.selected_choice if a.selected_choice is not None else '',
+                         int(a.hint_used),a.created_at.isoformat()])
     return response
 
 def api_status(request):

@@ -4,7 +4,7 @@
 
 ## 게임 규칙
 
-- 알고리즘 미션 **24개**: EASY 6 / NORMAL 9 / HARD 9
+- 알고리즘 미션 **32개**: EASY 6 / NORMAL 9 / HARD 9
 - 분야 **배열·문자열 / 2차원·시뮬레이션 / 탐색·자료구조 / 그리디·DP** 각 6개
 - 문제 전체 코드를 읽고 **버그가 있는 줄을 직접 클릭**하여 선택 → **수정 코드 한 줄 직접 입력**
 - NORMAL / HARD는 추가로 **원본 코드가 틀린 결과를 내는 반례 입력**을 3개 중 선택
@@ -88,7 +88,7 @@ python manage.py runserver
 - `raid/logic.py`: 안전한 코드 한 줄 비교 및 정답 줄 찾기
 - `raid/views.py`: 닉네임 세션, 제출 검증, HP 원자적 업데이트, CSV 내보내기
 - `raid/stats.py`: 첫 답변 기준, 표본 수 조건을 포함한 학습 통계
-- `raid/question_bank.json`: 자체 제작 IM 디버깅 문제 24개
+- `raid/question_bank.json`: 자체 제작 IM 디버깅 문제 32개
 - `scripts/validate_bank.py`: 정답 수정 후 3개 입력 중 1개만 버그가 발생하는지 검증 (신뢰한 자체 제작 코드만 로컬에서 실행)
 - `raid/tests/test_raid.py`: 중복 공격, 개인 한도, 반례 판단, 통계, 정답 노출 방지 등의 Django 테스트
 
@@ -101,3 +101,11 @@ python manage.py runserver
 - Render 기본 도메인을 Django의 호스트 및 CSRF 신뢰 목록에 자동 등록합니다.
 - `/healthz/`는 데이터베이스에 접속해 상태를 확인하고, 실패 시 503을 반환합니다.
 - 행사 참여 코드는 서버 측에서만 확인하며 GitHub나 브라우저 HTML에 넣지 않습니다.
+
+
+## 2026-10-13 업데이트: 32문제 4지선다형
+- 기존 Python 한 줄 직접 패치/반례 선택 → 모든 난이도에서 **4개 수정안 중 하나 선택**
+- 기존 24문제 + 신규 8문제 (누적합, 투 포인터, 2D 누적합, BFS, MST, 그리디, LIS)
+- PostgreSQL migration 0002_multiple_choice 적용, 기존 유저·HP·정오답 데이터 유지
+- 서버가 선택지 번호로 직접 채점. 제출된 Python 코드를 실행하지 않습니다.
+- GitHub CI에서 4선지 유효성, 중복 기여 방지, 복수 유저 HP 동기화 검사

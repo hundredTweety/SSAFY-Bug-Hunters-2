@@ -10,7 +10,14 @@ class Command(BaseCommand):
         bank=json.loads((Path(__file__).resolve().parents[2]/'question_bank.json').read_text(encoding='utf-8'))
         count=0
         for item in bank:
-            _,created=Question.objects.get_or_create(code=item['code'],defaults={k:v for k,v in item.items() if k!='code'})
+            question,created=Question.objects.get_or_create(
+                code=item['code'],defaults={k:v for k,v in item.items() if k!='code'}
+            )
+            if not created and question.choices != item['choices']:
+                # Preserve live records, edited questions, and all existing scores.
+                # Synchronize only the new multiple-choice options on deploy.
+                question.choices = item['choices']
+                question.save(update_fields=['choices'])
             count+=created
         RaidState.objects.get_or_create(pk=1, defaults={
             'max_hp':settings.RAID_MAX_HP,'remaining_hp':settings.RAID_MAX_HP,

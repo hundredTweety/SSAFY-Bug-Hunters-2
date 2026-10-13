@@ -16,7 +16,7 @@ class QuestionAdmin(admin.ModelAdmin):
 class AttemptAdmin(admin.ModelAdmin):
     list_display=('player','question','is_correct','patch_correct','case_correct','hint_used','created_at')
     list_filter=('is_correct','question__category','question__difficulty')
-    readonly_fields=('player','question','selected_line','patch_text','selected_case',
+    readonly_fields=('player','question','selected_line','patch_text','selected_case','selected_choice',
                      'patch_correct','case_correct','hint_used','is_correct','created_at')
 
 @admin.register(Clear)

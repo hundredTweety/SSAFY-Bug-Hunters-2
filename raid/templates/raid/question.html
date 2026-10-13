@@ -5,27 +5,33 @@
 <div class="mission-page-grid"><section class="question-shell">
   <div class="question-header"><span class="eyebrow">{{category_name}} · {{question.concept}}</span><span class="badge badge-{% if question.difficulty == 1 %}easy{% elif question.difficulty == 2 %}normal{% else %}hard{% endif %}">{% if question.difficulty == 1 %}EASY{% elif question.difficulty == 2 %}NORMAL{% else %}HARD{% endif %}</span></div>
   <div class="question-body"><h1>{{question.title}}</h1><p>{{question.body}}</p>
-    <div class="code-window"><div class="code-toolbar"><div class="window-dots"><i></i><i></i><i></i></div><span>buggy.py · 한 줄에 논리 오류 1개</span><span>Python 3</span></div>
-    <div class="code-list" role="group" aria-label="수정할 코드 줄 선택">
-    {% for ln in code_lines %}<label class="code-row {% if correct_line == ln.num %}code-fixed{% endif %}"><input type="radio" name="line" form="mission-form" value="{{ln.num}}" {% if clear %}disabled{% endif %} required><span class="line-number">{{ln.num|stringformat:'02d'}}</span><code>{{ln.content}}</code></label>{% endfor %}
-    </div></div>
-    <p class="code-tip">🖱️ {% if clear %}초록색으로 표시된 줄이 버그였어.{% else %}버그가 있다고 생각하는 <b>코드 줄을 클릭</b>해 선택해 줘.{% endif %}</p>
+    <div class="code-window"><div class="code-toolbar"><div class="window-dots"><i></i><i></i><i></i></div><span>buggy.py · 논리 오류 1개</span><span>Python 3</span></div>
+      <div class="code-list" aria-label="디버깅할 파이썬 코드">{% for ln in code_lines %}
+      <div class="code-row code-readonly {% if correct_line == ln.num %}code-fixed{% endif %}"><span class="line-number">{{ln.num|stringformat:'02d'}}</span><code>{{ln.content}}</code></div>
+      {% endfor %}</div></div>
+    <p class="code-tip">🔎 코드를 읽고 오류를 고칠 수 있는 <b>올바른 수정안 하나</b>를 골라 줘.</p>
   </div>
   {% if clear %}
   <div class="answer-reveal"><span class="answer-reveal-icon">🏅</span><div><h2>DEBUG COMPLETE!</h2><p>정확한 오류 위치와 수정 코드를 확인해 봐.</p><p class="explanation"><b>수정한 {{correct_line}}번째 줄</b><br><code>{{question.accepted_patches.0}}</code></p><p class="explanation"><b>왜 틀렸을까?</b><br>{{question.explanation}}</p><p class="damage-note">이 미션의 보스 공격 기여: {{clear.damage}} HP</p></div></div>
   {% else %}
   <form id="mission-form" class="debug-form" method="post" action="{% url 'submit' question.pk %}">{% csrf_token %}
-    <div class="debug-step"><div class="debug-heading"><span class="step-tag">STEP 1</span><h3>틀린 줄을 고치자</h3></div><label for="patch" class="field-desc">위에서 수정할 줄을 선택하고, 올바르게 고친 <b>한 줄 전체</b>를 입력해.</label><textarea id="patch" name="patch" rows="2" maxlength="300" spellcheck="false" required placeholder="예: if 0 <= nr < n and 0 <= nc < m:"></textarea><small>자동 파이썬 실행이 아닌, 미리 검증한 정답 코드의 토큰 비교로 채점해. 동일한 의미의 모든 표현을 인정하지는 않아.</small></div>
-    {% if show_case %}<div class="debug-step"><div class="debug-heading"><span class="step-tag">STEP 2</span><h3>반례를 찾아라</h3></div><p class="field-desc">다음 중 <b>원래 코드가 기대 결과를 출력하지 못하는 입력</b>은 딱 하나야. 어떤 입력일까?</p>
-    {% for case in cases %}<label class="case-option"><input type="radio" name="counterexample" value="{{case.num}}" required><span class="case-letter">{{case.label}}</span><span class="case-text"><b>입력 데이터</b><code>{{case.data}}</code><small>기대 결과: {{case.expected}}</small></span></label>{% endfor %}
-    </div>{% endif %}
+    <div class="debug-step"><div class="debug-heading"><span class="step-tag">4-CHOICE</span><h3>어떤 수정 코드가 정답일까?</h3></div>
+      <p class="field-desc">4개 보기 중 <b>오류를 올바르게 고치는 코드</b>를 하나 선택해. 코드는 작성하지 않아도 돼!</p>
+      <div class="mcq-options" role="radiogroup" aria-label="4지선다 정답 선택">
+      {% for index, option in choices %}
+      <label class="mcq-option"><input type="radio" name="choice" value="{{index}}" required>
+        <span class="mcq-letter">{{forloop.counter}}</span><code>{{option}}</code>
+      </label>
+      {% endfor %}
+      </div>
+    </div>
     <input id="hint-used" type="hidden" name="hint_used" value="0">
     <div class="hint-area"><button type="button" class="hint-button" id="hint-toggle" aria-expanded="false">💡 힌트 보기 (자유롭게)</button><p id="hint-text" class="hint-text" hidden>{{question.hint}}</p></div>
-    <div class="submit-row"><p>현재 시도 횟수 {{attempts}}회<br><small>틀려도 언제든 재도전할 수 있어.</small></p><button class="btn-primary" type="submit">🐛 버그 수정하고 공격 →</button></div>
+    <div class="submit-row"><p>현재 시도 횟수 {{attempts}}회<br><small>오답이어도 다시 고를 수 있어.</small></p><button class="btn-primary" type="submit">🐛 정답 제출하고 공격 →</button></div>
   </form>
   {% endif %}
 </section>
-<aside class="question-aside"><div class="info-card"><span class="eyebrow">MISSION GUIDE</span><h3>이 미션의 규칙</h3><p>1. 전체 코드를 읽고 잘못된 줄 선택<br>2. 수정한 코드 한 줄 직접 작성<br>{% if show_case %}3. 오류가 나는 테스트 입력 선택{% else %}3. 수정 코드 제출{% endif %}<br>4. 정답이면 보스 HP 감소!</p></div><div class="info-card"><span class="eyebrow">BOSS STATUS</span><h3>❤️ {{state.remaining_hp}} / {{state.max_hp}} HP</h3><p>개인 순위 없이 반 전체가 하나의 HP를 공유해.</p></div><a class="outline-button" href="{% url 'home' %}#missions">다른 미션 선택 ↗</a></aside>
+<aside class="question-aside"><div class="info-card"><span class="eyebrow">MISSION GUIDE</span><h3>이 미션의 규칙</h3><p>1. 전체 코드 읽기<br>2. 수정안 4개 중 하나 선택<br>3. 정답이면 보스 HP 감소!<br>4. 틀려도 재도전 가능</p></div><div class="info-card"><span class="eyebrow">BOSS STATUS</span><h3>❤️ {{state.remaining_hp}} / {{state.max_hp}} HP</h3><p>개인 순위 없이 반 전체가 하나의 HP를 공유해.</p></div><a class="outline-button" href="{% url 'home' %}#missions">다른 미션 선택 ↗</a></aside>
 </div>
 {% endblock %}
 {% block scripts %}<script>const b=document.getElementById('hint-toggle');if(b)b.addEventListener('click',()=>{const t=document.getElementById('hint-text');t.hidden=!t.hidden;b.setAttribute('aria-expanded',String(!t.hidden));if(!t.hidden)document.getElementById('hint-used').value='1'});</script>{% endblock %}
