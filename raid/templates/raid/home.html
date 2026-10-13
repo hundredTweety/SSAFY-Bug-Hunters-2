@@ -7,7 +7,7 @@
   <div class="hero-grid">
     <div class="hero-copy"><p class="label-tiny">🛠️ IM DEBUGGING CHALLENGE</p>
       <h1>버그는 각자 잡고,<br><span class="gradient-text">보스는 함께 잡자.</span></h1>
-      <p class="hero-desc">팀 배정도, 매일 출석도 필요 없어. 자신 있는 알고리즘 유형을 골라 <b>틀린 코드의 올바른 수정안을 고르면</b> 돼. 네가 잡은 버그가 우리 반의 공격력이 돼!</p>
+      <p class="hero-desc">팀 배정도, 매일 출석도 필요 없어. 자신 있는 알고리즘 유형을 골라 <b>버그가 있는 줄을 찾고 올바른 수정안을 고르면</b> 돼. 네가 잡은 버그가 우리 반의 공격력이 돼!</p>
       <div class="hero-tags"><span>32 미션</span><span>EASY / NORMAL / HARD</span><span>IM 디버깅</span><span>25인 공동 레이드</span></div>
     </div>
     <div class="boss-stage"><div class="boss-stars">✦ <span>✧</span> ✦</div><div class="boss-float"><img class="boss-image {% if state.remaining_hp == 0 %}boss-defeated{% endif %}" src="{% static 'raid/boss.svg' %}" alt="보라색 글리치 보스"></div><span class="boss-nameplate">👾 LV.99 버그로드</span><span class="boss-warning">올바른 한 줄에 무너지는 최종 보스</span>{% if state.remaining_hp == 0 %}<span class="defeated-tag">🎉 BOSS DEFEATED!</span>{% endif %}</div>
@@ -20,7 +20,7 @@
 </section>
 <section class="under-hero" aria-label="게임 진행 방법">
   <div class="how-card"><span class="how-icon">🎯</span><div><b>원하는 유형 선택</b><span>4개 영역 · 3단계 난이도</span></div></div>
-  <span class="how-arrow">→</span><div class="how-card"><span class="how-icon">🔎</span><div><b>수정안 4지선다</b><span>수정 코드 4지선다</span></div></div>
+  <span class="how-arrow">→</span><div class="how-card"><span class="how-icon">🔎</span><div><b>줄 선택 → 4지선다</b><span>코드 분석 후 수정안 선택</span></div></div>
   <span class="how-arrow">→</span><div class="how-card"><span class="how-icon">💥</span><div><b>공동 보스 공격</b><span>20 HP씩 총 50회</span></div></div>
 </section>
 {% if not player %}
@@ -30,7 +30,7 @@
 {% else %}
 <section class="player-banner"><div><span class="eyebrow">MY HUNTER LOG</span><h2>{{player.nickname}} 헌터, 다음 버그는 어디에 있을까?</h2><p>해결 <strong>{{personal_clears}}문제</strong> · 공동 공격 인정 최대 <strong>{{max_rewarded}}회</strong> · 이후에도 계속 학습 가능</p></div><a href="{% url 'results' %}" class="outline-button">📊 반 분석 결과</a></section>
 {% endif %}
-<section class="missions-section" id="missions"><div class="section-title"><div><span class="eyebrow">CHOOSE YOUR MISSION</span><h2>어떤 버그부터 잡을래?</h2><p>단계와 유형을 직접 골라. 모든 문제는 코드 수정안 4개 중 정답을 고르는 방식이야.</p></div><span class="small-notice">{{total_questions}} MISSIONS</span></div>
+<section class="missions-section" id="missions"><div class="section-title"><div><span class="eyebrow">CHOOSE YOUR MISSION</span><h2>어떤 버그부터 잡을래?</h2><p>단계와 유형을 직접 골라. 버그 위치를 선택한 다음 수정안 4개 중 정답을 고르는 방식이야.</p></div><span class="small-notice">{{total_questions}} MISSIONS</span></div>
 <div class="filter-row" role="group" aria-label="난이도 선택"><button class="filter-pill active" data-difficulty="all" type="button">전체</button><button class="filter-pill" data-difficulty="1" type="button">🟢 EASY</button><button class="filter-pill" data-difficulty="2" type="button">🟡 NORMAL</button><button class="filter-pill" data-difficulty="3" type="button">🔴 HARD</button></div>
 <div class="category-grid" role="group" aria-label="학습 유형 선택">{% for category in categories %}
 <button class="category-card tone-{{category.tone}} {% if forloop.first %}is-selected{% endif %}" data-category="{{category.code}}" type="button" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"><span class="category-icon">{{category.icon}}</span><b>{{category.name}}</b><small>{{category.desc}}</small><span class="category-foot">{{category.cleared}} / {{category.count}} 해결 <span>↗</span></span></button>
