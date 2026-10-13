@@ -118,11 +118,20 @@ def submit_answer(request,pk):
         messages.error(request,'4개 보기 중 하나를 선택해 줘.')
         return redirect('question',pk=pk)
     # Trust only the server-side option list; never execute or accept arbitrary submitted Python.
+    raw_line=(request.POST.get('line') or '').strip()
+    if not raw_line.isdigit():
+        messages.error(request,'버그가 있는 코드 줄을 먼저 선택해 줘.')
+        return redirect('question',pk=pk)
+    line=int(raw_line)
+    if not 1 <= line <= len(question.buggy_code.splitlines()):
+        messages.error(request,'올바른 코드 줄을 선택해 줘.')
+        return redirect('question',pk=pk)
     patch=question.choices[selected_choice]
-    line=target_line(question)
-    patch_ok=check_patch(question,line,patch)
-    case_ok=True  # MCQ replaces the former counterexample round.
-    is_correct=patch_ok
+    correct_line=target_line(question)
+    line_ok=line==correct_line
+    patch_ok=check_patch(question,correct_line,patch)
+    case_ok=True
+    is_correct=line_ok and patch_ok
     # Row lock and all writes inside one transaction (PostgreSQL recommended in deployment).
     ensure_state()
     with transaction.atomic():
@@ -146,7 +155,7 @@ def submit_answer(request,pk):
             else:
                 messages.success(request,'버그 수정 성공! 추가 공격 횟수와 무관하게 학습 기록은 남았어.')
         else:
-            messages.error(request,'아직 버그가 남아 있어. 코드를 다시 읽고 다른 수정안을 골라 봐!')
+            messages.error(request,'버그 위치 또는 수정안이 올바르지 않아. 다시 확인해 봐!')
     return redirect('question',pk=pk)
 
 def results(request):
