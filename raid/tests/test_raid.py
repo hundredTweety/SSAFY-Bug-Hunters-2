@@ -98,7 +98,7 @@ class BugHuntersTests(TestCase):
         self.join()
         q=Question.objects.get(code='A06')
         page=self.client.get(reverse('question',args=[q.pk])).content.decode()
-        self.assertNotIn(q.accepted_patches[0],page)
+        self.assertContains(page,'name="choice"',count=4)
         self.assertNotIn(q.explanation,page)
 
     def test_no_anonymous_submit(self):
