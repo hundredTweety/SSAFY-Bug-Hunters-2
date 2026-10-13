@@ -80,6 +80,18 @@ def join(request):
     messages.success(request,f'{nickname} 헌터, 임무 준비 완료!')
     return redirect('home')
 
+def line_verification_key(pk):
+    return f'bug_line_verified_{pk}'
+
+def next_unsolved_question(player,current_question):
+    questions=list(Question.objects.filter(is_active=True).order_by('difficulty','code'))
+    solved=set(Clear.objects.filter(player=player).values_list('question_id',flat=True))
+    if not questions:
+        return None
+    position=next((i for i,q in enumerate(questions) if q.pk==current_question.pk),-1)
+    ordered=questions[position+1:]+questions[:position+1]
+    return next((q for q in ordered if q.pk not in solved),None)
+
 def question_detail(request,pk):
     question=get_object_or_404(Question,pk=pk,is_active=True)
     player=current_player(request)
@@ -91,14 +103,35 @@ def question_detail(request,pk):
     state=ensure_state()
     code_lines=[]
     correct_line=target_line(question)
+    line_verified=request.session.get(line_verification_key(pk))==correct_line
     for num, content in enumerate(question.buggy_code.splitlines(),start=1):
         code_lines.append({'num':num,'content':content})
     return render(request,'raid/question.html',{
         'question':question,'player':player,'clear':clear,'attempts':attempts,'state':state,
-        'code_lines':code_lines,'correct_line':correct_line if clear else None,
-        'choices':list(enumerate(question.choices)),
+        'code_lines':code_lines,'correct_line':correct_line if clear or line_verified else None,
+        'line_verified':line_verified,'next_question':next_unsolved_question(player,question) if clear else None,
+        'choices':list(enumerate(question.choices)) if line_verified else [],
         'category_name':question.get_category_display(),
     })
+
+@require_POST
+def check_line(request,pk):
+    question=get_object_or_404(Question,pk=pk,is_active=True)
+    player=current_player(request)
+    if not player:
+        messages.info(request,'먼저 닉네임을 등록해 줘!')
+        return redirect('home')
+    if Clear.objects.filter(player=player,question=question).exists():
+        return redirect('question',pk=pk)
+    key=line_verification_key(pk)
+    raw=(request.POST.get('line') or '').strip()
+    if raw.isdigit() and int(raw)==target_line(question):
+        request.session[key]=target_line(question)
+        messages.success(request,'버그 위치 발견! 이제 올바른 수정 코드를 선택해 줘.')
+    else:
+        request.session.pop(key,None)
+        messages.error(request,'그 줄은 버그 위치가 아니야. 코드를 다시 읽고 다른 줄을 선택해 봐.')
+    return redirect('question',pk=pk)
 
 @require_POST
 def submit_answer(request,pk):
@@ -109,6 +142,11 @@ def submit_answer(request,pk):
     if Clear.objects.filter(player=player,question=question).exists():
         messages.info(request,'이미 해결했어! 다른 미션에도 도전해 봐.')
         return redirect('question',pk=pk)
+    correct_line=target_line(question)
+    key=line_verification_key(pk)
+    if request.session.get(key)!=correct_line:
+        messages.error(request,'먼저 잘못된 코드 줄을 정확히 찾아야 수정안을 제출할 수 있어.')
+        return redirect('question',pk=pk)
     raw_choice=(request.POST.get('choice') or '').strip()
     if not raw_choice.isdigit() or len(question.choices)!=4:
         messages.error(request,'4개 보기 중 하나를 선택해 줘.')
@@ -117,21 +155,12 @@ def submit_answer(request,pk):
     if not 0<=selected_choice<4:
         messages.error(request,'4개 보기 중 하나를 선택해 줘.')
         return redirect('question',pk=pk)
-    # Trust only the server-side option list; never execute or accept arbitrary submitted Python.
-    raw_line=(request.POST.get('line') or '').strip()
-    if not raw_line.isdigit():
-        messages.error(request,'버그가 있는 코드 줄을 먼저 선택해 줘.')
-        return redirect('question',pk=pk)
-    line=int(raw_line)
-    if not 1 <= line <= len(question.buggy_code.splitlines()):
-        messages.error(request,'올바른 코드 줄을 선택해 줘.')
-        return redirect('question',pk=pk)
+    # Step 1 was verified on the server; clients cannot skip it by forging POST data.
+    line=correct_line
     patch=question.choices[selected_choice]
-    correct_line=target_line(question)
-    line_ok=line==correct_line
-    patch_ok=check_patch(question,correct_line,patch)
+    patch_ok=check_patch(question,line,patch)
     case_ok=True
-    is_correct=line_ok and patch_ok
+    is_correct=patch_ok
     # Row lock and all writes inside one transaction (PostgreSQL recommended in deployment).
     ensure_state()
     with transaction.atomic():
@@ -145,6 +174,7 @@ def submit_answer(request,pk):
             hint_used=request.POST.get('hint_used')=='1',is_correct=is_correct,
         )
         if is_correct:
+            request.session.pop(key,None)
             prior=Clear.objects.filter(player=player,damage__gt=0).count()
             amount=min(state.remaining_hp,state.damage_per_clear) if (state.remaining_hp>0 and prior<settings.RAID_MAX_CLEARS_PER_PLAYER) else 0
             Clear.objects.create(player=player,question=question,damage=amount)
@@ -155,7 +185,7 @@ def submit_answer(request,pk):
             else:
                 messages.success(request,'버그 수정 성공! 추가 공격 횟수와 무관하게 학습 기록은 남았어.')
         else:
-            messages.error(request,'버그 위치 또는 수정안이 올바르지 않아. 다시 확인해 봐!')
+            messages.error(request,'수정안이 정답이 아니야. 버그 위치는 맞았으니 다른 코드를 골라 봐!')
     return redirect('question',pk=pk)
 
 def results(request):
