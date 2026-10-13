@@ -1,0 +1,11 @@
+{% extends 'raid/base.html' %}
+{% block title %}학습 분석 | BUG HUNTERS{% endblock %}
+{% block content %}
+<section class="results-head"><span class="eyebrow">CLASS INTELLIGENCE REPORT</span><h1>우리 반은 <span class="gradient-text">어디에서 막혔을까?</span></h1><p>25명 모두의 풀이 데이터를 익명 집계한 구현 실수 리포트</p><div class="stat-grid"><div><b>{{players}}</b><span>등록 헌터</span></div><div><b>{{attempt_count}}</b><span>전체 제출</span></div><div><b>{{clears}}</b><span>해결한 미션</span></div></div></section>
+<section class="report-panel"><div class="section-title"><div><span class="eyebrow">TOP WEAK POINTS</span><h2>첫 제출 오답률 TOP 5</h2><p>한 사람의 같은 문제 재도전은 한 번만 집계해.</p></div><span class="badge">개념별 서로 다른 참여자 3명 이상</span></div>
+{% if top5 %}<div class="result-rows">{% for row in top5 %}<div class="result-row"><div class="result-top"><b><span class="rank">{{forloop.counter|stringformat:'02d'}}</span> {{row.concept}}</b><strong>{{row.rate}}%</strong></div><div class="result-track"><div style="width:{{row.rate}}%"></div></div><small>첫 오답 {{row.wrong}} / 첫 응답 {{row.total}} · 참여 인원 {{row.players}}명 · 관련 미션 {{row.question_count}}개 · 패치 오류 {{row.patch_wrong}}회 · 반례 오류 {{row.case_wrong}}회</small></div>{% endfor %}</div>
+{% if not reliable %}<p class="report-warning">현재 기준을 충족하는 개념이 5개 미만이야. 표시된 결과만 참고하고, 나머지는 표본이 쌓이기를 기다려 줘.</p>{% endif %}
+{% else %}<div class="empty-state">서로 다른 참가자 3명 이상이 풀이한 개념이 아직 없어. 표본이 쌓이면 여기에 순위를 표시할게.</div>{% endif %}</section>
+<section class="other-reports"><div class="section-title"><div><span class="eyebrow">BY CATEGORY</span><h2>분야별 취약 개념</h2></div></div><div class="report-grid">{% for group in categories %}<div class="report-small"><b>{{group.icon}} {{group.name}}</b>{% for row in group.rows %}<div class="report-small-row"><span>{{row.concept}} <small>({{row.players}}명)</small></span><strong>{{row.rate}}%</strong></div>{% empty %}<p>아직 통계 가능한 데이터가 부족해.</p>{% endfor %}</div>{% endfor %}</div></section>
+<div class="info-card report-method"><b>📌 이 데이터를 해석하는 법</b><p>첫 제출의 오답률만 계산해. 자발적으로 선택한 문제이고, 난이도·응답자 수가 균등하지 않으므로 <b>반 전체 능력의 객관적 순위는 아니야.</b> 적은 응답으로 순위가 왜곡되지 않도록 개념별 응답자 3명 미만은 제외했어. 비슷한 실수가 반복된 영역을 스터디에서 복습하는 참고용으로 사용해 줘.</p>{% if request.user.is_staff %}<form method="post" action="{% url 'export_results' %}">{% csrf_token %}<button class="outline-button" type="submit">⬇ 첫 답변 CSV 다운로드 (운영자)</button></form>{% endif %}</div>
+{% endblock %}

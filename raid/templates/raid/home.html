@@ -1,0 +1,58 @@
+{% extends 'raid/base.html' %}
+{% load static %}
+{% block title %}미션 선택 | BUG HUNTERS 2.0{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-topline"><span class="eyebrow"><span class="live-dot"></span> SSAFY 1반 · CO-OP RAID</span><span class="top-pill">SOLO PLAY · SHARED HP</span></div>
+  <div class="hero-grid">
+    <div class="hero-copy"><p class="label-tiny">🛠️ IM DEBUGGING CHALLENGE</p>
+      <h1>버그는 각자 잡고,<br><span class="gradient-text">보스는 함께 잡자.</span></h1>
+      <p class="hero-desc">팀 배정도, 매일 출석도 필요 없어. 자신 있는 알고리즘 유형을 골라 <b>틀린 코드를 직접 고치고</b> 반례까지 찾아봐. 네가 잡은 버그가 우리 반의 공격력이 돼!</p>
+      <div class="hero-tags"><span>24 미션</span><span>EASY / NORMAL / HARD</span><span>IM 디버깅</span><span>25인 공동 레이드</span></div>
+    </div>
+    <div class="boss-stage"><div class="boss-stars">✦ <span>✧</span> ✦</div><div class="boss-float"><img class="boss-image {% if state.remaining_hp == 0 %}boss-defeated{% endif %}" src="{% static 'raid/boss.svg' %}" alt="보라색 글리치 보스"></div><span class="boss-nameplate">👾 LV.99 버그로드</span><span class="boss-warning">코드 한 줄에 무너지는 최종 보스</span>{% if state.remaining_hp == 0 %}<span class="defeated-tag">🎉 BOSS DEFEATED!</span>{% endif %}</div>
+  </div>
+  <div class="boss-hp-panel">
+    <div class="hp-heading"><span>❤️ BOSS HP</span><strong><span data-hp>{{state.remaining_hp}}</span><span class="hp-muted"> / {{state.max_hp}}</span></strong></div>
+    <div class="hp-track" role="progressbar" aria-label="보스 남은 체력" aria-valuemin="0" aria-valuemax="{{state.max_hp}}" aria-valuenow="{{state.remaining_hp}}"><div class="hp-fill" style="width:{% widthratio state.remaining_hp state.max_hp 100 %}%" data-hpbar></div></div>
+    <div class="hp-foot"><span>공동 공격 <b>{{cleared_total}}회</b></span><span>기여 헌터 <b>{{members}}명</b></span><span>격파 진행률 <b data-progress>{{total_progress}}%</b></span></div>
+  </div>
+</section>
+<section class="under-hero" aria-label="게임 진행 방법">
+  <div class="how-card"><span class="how-icon">🎯</span><div><b>원하는 유형 선택</b><span>4개 영역 · 3단계 난이도</span></div></div>
+  <span class="how-arrow">→</span><div class="how-card"><span class="how-icon">🔎</span><div><b>버그·반례 찾기</b><span>코드 한 줄 직접 수정</span></div></div>
+  <span class="how-arrow">→</span><div class="how-card"><span class="how-icon">💥</span><div><b>공동 보스 공격</b><span>20 HP씩 총 50회</span></div></div>
+</section>
+{% if not player %}
+<section class="join-banner" id="join-form"><div><span class="eyebrow">WELCOME, HUNTER</span><h2>닉네임 하나로 바로 참여</h2><p>이메일 없이 시작하고, 같은 브라우저에서는 자동으로 기록을 이어가. 가입은 익명 식별용이야.</p></div>
+<form action="{% url 'join' %}" method="post" class="join-form">{% csrf_token %}<label class="sr-only" for="nickname">닉네임</label><input id="nickname" name="nickname" minlength="2" maxlength="12" placeholder="닉네임 (2~12자)" required>{% if invite_required %}<label class="sr-only" for="invite_code">반 참여 코드</label><input id="invite_code" type="password" name="invite_code" maxlength="80" placeholder="반 참여 코드" autocomplete="off" required>{% endif %}<button class="btn-primary" type="submit">레이드 참가 →</button><label class="consent"><input type="checkbox" name="consent" value="yes" required>닉네임·정오답·제출 시간을 통계 목적으로 저장하는 것에 동의해요. 관리자만 개별 데이터를 열람할 수 있어요.</label></form>
+</section>
+{% else %}
+<section class="player-banner"><div><span class="eyebrow">MY HUNTER LOG</span><h2>{{player.nickname}} 헌터, 다음 버그는 어디에 있을까?</h2><p>해결 <strong>{{personal_clears}}문제</strong> · 공동 공격 인정 최대 <strong>{{max_rewarded}}회</strong> · 이후에도 계속 학습 가능</p></div><a href="{% url 'results' %}" class="outline-button">📊 반 분석 결과</a></section>
+{% endif %}
+<section class="missions-section" id="missions"><div class="section-title"><div><span class="eyebrow">CHOOSE YOUR MISSION</span><h2>어떤 버그부터 잡을래?</h2><p>단계와 유형을 직접 골라. NORMAL·HARD는 반례까지 찾아야 성공해.</p></div><span class="small-notice">{{total_questions}} MISSIONS</span></div>
+<div class="filter-row" role="group" aria-label="난이도 선택"><button class="filter-pill active" data-difficulty="all" type="button">전체</button><button class="filter-pill" data-difficulty="1" type="button">🟢 EASY</button><button class="filter-pill" data-difficulty="2" type="button">🟡 NORMAL</button><button class="filter-pill" data-difficulty="3" type="button">🔴 HARD</button></div>
+<div class="category-grid" role="group" aria-label="학습 유형 선택">{% for category in categories %}
+<button class="category-card tone-{{category.tone}} {% if forloop.first %}is-selected{% endif %}" data-category="{{category.code}}" type="button" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"><span class="category-icon">{{category.icon}}</span><b>{{category.name}}</b><small>{{category.desc}}</small><span class="category-foot">{{category.cleared}} / {{category.count}} 해결 <span>↗</span></span></button>
+{% endfor %}</div>
+{% for category in categories %}<section class="mission-group" data-panel="{{category.code}}" {% if not forloop.first %}hidden{% endif %}><div class="mission-group-heading"><div><b>{{category.icon}} {{category.name}} · 디버깅</b><span>오답도 기록되어 학습 리포트에 반영돼.</span></div><span class="badge">{{category.count}} MISSIONS</span></div>
+<div class="mission-list">{% for q in category.questions %}<a class="mission-item {% if q.id in cleared_ids %}completed{% endif %}" data-level="{{q.difficulty}}" href="{% if player %}{% url 'question' q.pk %}{% else %}#join-form{% endif %}"><span class="mission-number">{{q.code}}</span><span class="mission-info"><b>{{q.title}}</b><small>{{q.concept}} · {% if q.difficulty == 1 %}EASY{% elif q.difficulty == 2 %}NORMAL{% else %}HARD{% endif %}</small></span><span class="mission-state">{% if q.id in cleared_ids %}✓ 해결{% else %}→ 도전{% endif %}</span></a>{% endfor %}</div>
+<p class="no-missions" hidden>이 난이도의 미션은 이 영역에 없어.</p></section>{% endfor %}
+</section>
+<div class="bottom-grid"><div class="info-card"><span class="eyebrow">FAIR PLAY</span><h3>혼자 풀어도 성과는 함께 🎁</h3><p>25명 기준 보스 HP 1,000. 정답 1개당 20 데미지, 한 사람당 <b>최대 3회</b> 공동 공격에 반영돼. 순위 없이 원하는 만큼 공부하고 반 행사 혜택은 전원 동일해.</p></div><div class="info-card"><span class="eyebrow">REAL LEARNING DATA</span><h3>우리가 가장 헷갈린 구현은? 📊</h3><p>이벤트 종료 후 첫 제출을 기준으로 알고리즘 구현 실수 TOP 5와 유형별 취약점을 공개해. 반 전체 복습 방향을 정할 때 활용하자.</p><a class="text-link" href="{% url 'results' %}">리포트 보기 →</a></div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+ let category=document.querySelector('[data-category].is-selected')?.dataset.category || 'array';
+ let level='all';
+ function apply(){document.querySelectorAll('[data-category]').forEach(b=>{const active=b.dataset.category===category;b.classList.toggle('is-selected',active);b.setAttribute('aria-pressed',String(active));});
+ document.querySelectorAll('[data-panel]').forEach(p=>{p.hidden=p.dataset.panel!==category;let visible=0;p.querySelectorAll('[data-level]').forEach(q=>{q.hidden=level!=='all'&&q.dataset.level!==level;if(!q.hidden)visible++});p.querySelector('.no-missions').hidden=visible>0;});
+ document.querySelectorAll('[data-difficulty]').forEach(b=>b.classList.toggle('active',b.dataset.difficulty===level));}
+ document.querySelectorAll('[data-category]').forEach(b=>b.addEventListener('click',()=>{category=b.dataset.category;apply()}));
+ document.querySelectorAll('[data-difficulty]').forEach(b=>b.addEventListener('click',()=>{level=b.dataset.difficulty;apply()}));
+ async function refresh(){if(document.hidden)return;try{let r=await fetch('{% url 'api_status' %}',{cache:'no-store'});if(!r.ok)return;let v=await r.json();const h=document.querySelector('[data-hp]'),bar=document.querySelector('[data-hpbar]'),p=document.querySelector('[data-progress]');if(h)h.textContent=v.hp;if(bar)bar.style.width=(100-v.progress)+'%';if(p)p.textContent=v.progress+'%';let track=document.querySelector('.hp-track');if(track)track.setAttribute('aria-valuenow',v.hp);}catch(e){} }
+ setInterval(refresh,25000);
+})();
+</script>
+{% endblock %}

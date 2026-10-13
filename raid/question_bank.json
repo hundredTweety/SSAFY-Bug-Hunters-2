@@ -1,0 +1,1228 @@
+[
+  {
+    "code": "A01",
+    "category": "array",
+    "concept": "초기값 설정",
+    "difficulty": 1,
+    "title": "음수만 있는 최댓값",
+    "body": "모든 수가 음수여도 정확한 최댓값을 반환해야 해.",
+    "buggy_code": "def solve(data):\n    best = 0\n    for x in data:\n        if x > best:\n            best = x\n    return best",
+    "original_line": "best = 0",
+    "accepted_patches": [
+      "best = data[0]"
+    ],
+    "case_options": [
+      {
+        "input": [
+          -5,
+          -2,
+          -9
+        ],
+        "expected": -2
+      },
+      {
+        "input": [
+          3,
+          1,
+          -2
+        ],
+        "expected": 3
+      },
+      {
+        "input": [
+          0,
+          0,
+          0
+        ],
+        "expected": 0
+      }
+    ],
+    "counterexample_index": 0,
+    "hint": "처음부터 0이 최댓값 후보여도 될까?",
+    "explanation": "최댓값을 0으로 시작하면 음수만 있는 입력에서 잘못된 값 0이 남아. 실제 원소로 초기화해야 해.",
+    "is_active": true
+  },
+  {
+    "code": "A02",
+    "category": "array",
+    "concept": "상태 초기화",
+    "difficulty": 1,
+    "title": "끊어진 1의 연속",
+    "body": "0을 만나면 연속된 1의 길이는 다시 시작돼야 해.",
+    "buggy_code": "def solve(data):\n    count = 0\n    best = 0\n    for x in data:\n        if x == 1:\n            count += 1\n        else:\n            count = 1\n        best = max(best, count)\n    return best",
+    "original_line": "count = 1",
+    "accepted_patches": [
+      "count = 0"
+    ],
+    "case_options": [
+      {
+        "input": [
+          1,
+          1,
+          1
+        ],
+        "expected": 3
+      },
+      {
+        "input": [
+          1,
+          0,
+          1
+        ],
+        "expected": 1
+      },
+      {
+        "input": [],
+        "expected": 0
+      }
+    ],
+    "counterexample_index": 1,
+    "hint": "끊긴 순간의 길이는 1일까, 0일까?",
+    "explanation": "연속된 1이 끊기면 길이는 0으로 초기화해야 다음 구간을 정확하게 셀 수 있어.",
+    "is_active": true
+  },
+  {
+    "code": "A03",
+    "category": "array",
+    "concept": "문자열·패턴",
+    "difficulty": 1,
+    "title": "가짜 회문 판별기",
+    "body": "앞뒤가 같은 문자열인지 확인하는데, 일부 일반 문자열까지 회문이라고 판단해.",
+    "buggy_code": "def solve(data):\n    s = data\n    return s == s[::1]",
+    "original_line": "return s == s[::1]",
+    "accepted_patches": [
+      "return s == s[::-1]"
+    ],
+    "case_options": [
+      {
+        "input": "aba",
+        "expected": true
+      },
+      {
+        "input": "",
+        "expected": true
+      },
+      {
+        "input": "abca",
+        "expected": false
+      }
+    ],
+    "counterexample_index": 2,
+    "hint": "슬라이싱 세 번째 값은 방향과 간격을 결정해.",
+    "explanation": "[::1]은 원래 문자열 그대로고, [::-1]은 뒤집은 문자열이야.",
+    "is_active": true
+  },
+  {
+    "code": "A04",
+    "category": "array",
+    "concept": "인덱스·경계",
+    "difficulty": 2,
+    "title": "마지막 중복이 사라졌다",
+    "body": "정렬된 배열에 같은 숫자가 연속으로 있는지 확인해.",
+    "buggy_code": "def solve(data):\n    for i in range(1, len(data) - 1):\n        if data[i] == data[i-1]:\n            return True\n    return False",
+    "original_line": "for i in range(1, len(data) - 1):",
+    "accepted_patches": [
+      "for i in range(1, len(data)):"
+    ],
+    "case_options": [
+      {
+        "input": [
+          1,
+          2,
+          2
+        ],
+        "expected": true
+      },
+      {
+        "input": [
+          1,
+          1,
+          2
+        ],
+        "expected": true
+      },
+      {
+        "input": [
+          1,
+          2,
+          3
+        ],
+        "expected": false
+      }
+    ],
+    "counterexample_index": 0,
+    "hint": "마지막 원소까지 비교하려면 range의 끝값은?",
+    "explanation": "반복문의 끝을 하나 줄이면 마지막 인접한 쌍을 검사하지 못해.",
+    "is_active": true
+  },
+  {
+    "code": "A05",
+    "category": "array",
+    "concept": "문자열·패턴",
+    "difficulty": 2,
+    "title": "사라진 맨 끝의 패턴",
+    "body": "문자열에서 패턴이 등장하는지 직접 탐색하는 코드야.",
+    "buggy_code": "def solve(data):\n    s = data['text']\n    pattern = data['pattern']\n    for i in range(len(s)-len(pattern)):\n        if s[i:i+len(pattern)] == pattern:\n            return True\n    return False",
+    "original_line": "for i in range(len(s)-len(pattern)):",
+    "accepted_patches": [
+      "for i in range(len(s)-len(pattern)+1):"
+    ],
+    "case_options": [
+      {
+        "input": {
+          "text": "ABCD",
+          "pattern": "AB"
+        },
+        "expected": true
+      },
+      {
+        "input": {
+          "text": "ABCD",
+          "pattern": "CD"
+        },
+        "expected": true
+      },
+      {
+        "input": {
+          "text": "ABCD",
+          "pattern": "ZZ"
+        },
+        "expected": false
+      }
+    ],
+    "counterexample_index": 1,
+    "hint": "패턴이 맨 마지막에서 시작할 수도 있어.",
+    "explanation": "가능한 시작 인덱스는 len(s)-len(pattern)까지 포함해야 해.",
+    "is_active": true
+  },
+  {
+    "code": "A06",
+    "category": "array",
+    "concept": "누적·최적값 갱신",
+    "difficulty": 3,
+    "title": "움직이는 창의 합",
+    "body": "길이 k의 연속 부분 배열 합 중 최댓값을 슬라이딩 윈도우로 구해.",
+    "buggy_code": "def solve(data):\n    a, k = data['a'], data['k']\n    total = sum(a[:k])\n    best = total\n    for right in range(k, len(a)):\n        total += a[right] - a[right-k+1]\n        best = max(best, total)\n    return best",
+    "original_line": "total += a[right] - a[right-k+1]",
+    "accepted_patches": [
+      "total += a[right] - a[right-k]"
+    ],
+    "case_options": [
+      {
+        "input": {
+          "a": [
+            2,
+            2
+          ],
+          "k": 2
+        },
+        "expected": 4
+      },
+      {
+        "input": {
+          "a": [
+            0,
+            0,
+            0
+          ],
+          "k": 1
+        },
+        "expected": 0
+      },
+      {
+        "input": {
+          "a": [
+            1,
+            2,
+            3
+          ],
+          "k": 2
+        },
+        "expected": 5
+      }
+    ],
+    "counterexample_index": 2,
+    "hint": "창이 한 칸 이동하면 어느 인덱스가 빠질까?",
+    "explanation": "새 원소는 right, 빠지는 원소는 right-k야. right-k+1을 빼면 창이 잘못 이동해.",
+    "is_active": true
+  },
+  {
+    "code": "G01",
+    "category": "grid",
+    "concept": "초기값 설정",
+    "difficulty": 1,
+    "title": "음수 행의 최댓값",
+    "body": "2차원 배열에서 행 합계 중 가장 큰 값을 찾아.",
+    "buggy_code": "def solve(data):\n    best = 0\n    for row in data:\n        best = max(best, sum(row))\n    return best",
+    "original_line": "best = 0",
+    "accepted_patches": [
+      "best = sum(data[0])"
+    ],
+    "case_options": [
+      {
+        "input": [
+          [
+            -2,
+            -5
+          ],
+          [
+            -1,
+            -6
+          ]
+        ],
+        "expected": -7
+      },
+      {
+        "input": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "expected": 7
+      },
+      {
+        "input": [
+          [
+            0
+          ],
+          [
+            0
+          ]
+        ],
+        "expected": 0
+      }
+    ],
+    "counterexample_index": 0,
+    "hint": "배열에 양수가 하나도 없으면 0은 올바른 답일까?",
+    "explanation": "최댓값은 존재하는 행 합계로 초기화해야 음수 행도 처리할 수 있어.",
+    "is_active": true
+  },
+  {
+    "code": "G02",
+    "category": "grid",
+    "concept": "인덱스·경계",
+    "difficulty": 2,
+    "title": "직사각형 델타 버그",
+    "body": "1인 칸마다 상하좌우에 있는 1을 세어 반환해. 입력은 직사각형일 수 있어.",
+    "buggy_code": "def solve(data):\n    n, m = len(data), len(data[0])\n    dr, dc = [-1,1,0,0], [0,0,-1,1]\n    total = 0\n    for r in range(n):\n        for c in range(m):\n            if data[r][c] == 1:\n                for d in range(4):\n                    nr, nc = r+dr[d], c+dc[d]\n                    if 0 <= nr < m and 0 <= nc < m:\n                        total += (data[nr][nc] == 1)\n    return total",
+    "original_line": "if 0 <= nr < m and 0 <= nc < m:",
+    "accepted_patches": [
+      "if 0 <= nr < n and 0 <= nc < m:"
+    ],
+    "case_options": [
+      {
+        "input": [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        "expected": 0
+      },
+      {
+        "input": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "expected": 0
+      },
+      {
+        "input": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "expected": 0
+      }
+    ],
+    "counterexample_index": 1,
+    "hint": "행 크기와 열 크기는 서로 다를 수 있어.",
+    "explanation": "행 인덱스 nr의 상한은 n, 열 인덱스 nc의 상한은 m이어야 해.",
+    "is_active": true
+  },
+  {
+    "code": "G03",
+    "category": "grid",
+    "concept": "방문 처리",
+    "difficulty": 2,
+    "title": "붙어 있는 방문 배열",
+    "body": "상하좌우로 연결된 1의 섬 개수를 BFS로 구하는 코드야.",
+    "buggy_code": "def solve(data):\n    from collections import deque\n    n, m = len(data), len(data[0])\n    visited = [[False] * m] * n\n    islands = 0\n    for r in range(n):\n        for c in range(m):\n            if data[r][c] == 0 or visited[r][c]:\n                continue\n            islands += 1\n            q = deque([(r,c)])\n            visited[r][c] = True\n            while q:\n                x, y = q.popleft()\n                for dx, dy in [(-1,0),(1,0),(0,-1),(0,1)]:\n                    nx, ny = x+dx, y+dy\n                    if 0<=nx<n and 0<=ny<m and data[nx][ny] and not visited[nx][ny]:\n                        visited[nx][ny] = True\n                        q.append((nx,ny))\n    return islands",
+    "original_line": "visited = [[False] * m] * n",
+    "accepted_patches": [
+      "visited = [[False] * m for _ in range(n)]"
+    ],
+    "case_options": [
+      {
+        "input": [
+          [
+            1
+          ],
+          [
+            1
+          ]
+        ],
+        "expected": 1
+      },
+      {
+        "input": [
+          [
+            1
+          ],
+          [
+            0
+          ]
+        ],
+        "expected": 1
+      },
+      {
+        "input": [
+          [
+            1
+          ],
+          [
+            0
+          ],
+          [
+            1
+          ]
+        ],
+        "expected": 2
+      }
+    ],
+    "counterexample_index": 2,
+    "hint": "곱셈으로 만든 행들이 각각 독립된 리스트인지 확인해.",
+    "explanation": "[[False]*m]*n은 n개 행이 같은 내부 리스트를 공유해. 리스트 컴프리헨션으로 독립적인 방문 배열을 만들어야 해.",
+    "is_active": true
+  },
+  {
+    "code": "G04",
+    "category": "grid",
+    "concept": "인덱스·경계",
+    "difficulty": 2,
+    "title": "봉우리 누락 사건",
+    "body": "주변 4방향보다 값이 엄격히 큰 칸을 세어. 격자는 직사각형일 수 있어.",
+    "buggy_code": "def solve(data):\n    n, m = len(data), len(data[0])\n    count = 0\n    for r in range(n):\n        for c in range(m):\n            peak = True\n            for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:\n                nr, nc = r+dr, c+dc\n                if 0<=nr<n and 0<=nc<n and data[nr][nc] >= data[r][c]:\n                    peak = False\n            if peak:\n                count += 1\n    return count",
+    "original_line": "if 0<=nr<n and 0<=nc<n and data[nr][nc] >= data[r][c]:",
+    "accepted_patches": [
+      "if 0<=nr<n and 0<=nc<m and data[nr][nc] >= data[r][c]:"
+    ],
+    "case_options": [
+      {
+        "input": [
+          [
+            1,
+            5,
+            9
+          ],
+          [
+            0,
+            2,
+            0
+          ]
+        ],
+        "expected": 1
+      },
+      {
+        "input": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "expected": 1
+      },
+      {
+        "input": [
+          [
+            5
+          ]
+        ],
+        "expected": 1
+      }
+    ],
+    "counterexample_index": 0,
+    "hint": "현재 비교에서 nr과 nc의 상한이 똑같아.",
+    "explanation": "행·열 길이가 다를 수 있으므로 열 인덱스는 m과 비교해야 해.",
+    "is_active": true
+  },
+  {
+    "code": "G05",
+    "category": "grid",
+    "concept": "좌표 변환",
+    "difficulty": 3,
+    "title": "시계방향 회전의 함정",
+    "body": "정사각 행렬을 시계방향 90도 회전하는 코드야.",
+    "buggy_code": "def solve(data):\n    n = len(data)\n    rotated = [[0]*n for _ in range(n)]\n    for r in range(n):\n        for c in range(n):\n            rotated[c][n-1-r] = data[c][r]\n    return rotated",
+    "original_line": "rotated[c][n-1-r] = data[c][r]",
+    "accepted_patches": [
+      "rotated[c][n-1-r] = data[r][c]"
+    ],
+    "case_options": [
+      {
+        "input": [
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "expected": [
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            2
+          ]
+        ]
+      },
+      {
+        "input": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "expected": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            2
+          ]
+        ]
+      },
+      {
+        "input": [
+          [
+            7
+          ]
+        ],
+        "expected": [
+          [
+            7
+          ]
+        ]
+      }
+    ],
+    "counterexample_index": 1,
+    "hint": "도착 좌표와 출발 좌표를 구분해서 생각해.",
+    "explanation": "입력 data[r][c]가 출력 rotated[c][n-1-r]로 이동해야 해.",
+    "is_active": true
+  },
+  {
+    "code": "G06",
+    "category": "grid",
+    "concept": "DP 상태 전이",
+    "difficulty": 3,
+    "title": "가장 싼 길을 찾았는데",
+    "body": "오른쪽 또는 아래로 이동해서 오른쪽 아래까지 가는 최소 비용을 구하는 DP야.",
+    "buggy_code": "def solve(data):\n    n, m = len(data), len(data[0])\n    dp = [[10**9]*m for _ in range(n)]\n    dp[0][0] = data[0][0]\n    for r in range(n):\n        for c in range(m):\n            if r == 0 and c == 0:\n                continue\n            top = dp[r-1][c] if r > 0 else 10**9\n            left = dp[r][c-1] if c > 0 else 10**9\n            dp[r][c] = max(top, left) + data[r][c]\n    return dp[-1][-1]",
+    "original_line": "dp[r][c] = max(top, left) + data[r][c]",
+    "accepted_patches": [
+      "dp[r][c] = min(top, left) + data[r][c]"
+    ],
+    "case_options": [
+      {
+        "input": [
+          [
+            1
+          ]
+        ],
+        "expected": 1
+      },
+      {
+        "input": [
+          [
+            3
+          ]
+        ],
+        "expected": 3
+      },
+      {
+        "input": [
+          [
+            1,
+            9
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "expected": 3
+      }
+    ],
+    "counterexample_index": 2,
+    "hint": "최소 비용을 구하는데 이전 경로는 무엇을 선택해야 할까?",
+    "explanation": "최소 비용 경로라면 위·왼쪽 중 작은 누적 비용을 선택해야 해. 경계의 불가능한 방향은 큰 값으로 둬.",
+    "is_active": true
+  },
+  {
+    "code": "S01",
+    "category": "search",
+    "concept": "스택·큐",
+    "difficulty": 1,
+    "title": "괄호 검사기의 편애",
+    "body": "()와 [] 두 종류의 괄호로 올바른 괄호 문자열인지 검사해.",
+    "buggy_code": "def solve(data):\n    stack = []\n    pairs = {')':'(', ']':'['}\n    for ch in data:\n        if ch in '([':\n            stack.append(ch)\n        elif not stack or stack.pop() != '(':\n            return False\n    return not stack",
+    "original_line": "elif not stack or stack.pop() != '(':",
+    "accepted_patches": [
+      "elif not stack or stack.pop() != pairs[ch]:"
+    ],
+    "case_options": [
+      {
+        "input": "[]",
+        "expected": true
+      },
+      {
+        "input": "()",
+        "expected": true
+      },
+      {
+        "input": "((",
+        "expected": false
+      }
+    ],
+    "counterexample_index": 0,
+    "hint": "닫는 괄호마다 대응하는 여는 괄호가 달라.",
+    "explanation": "닫는 괄호가 )인지 ]인지에 따라 기대되는 여는 괄호를 pairs 딕셔너리에서 가져와야 해.",
+    "is_active": true
+  },
+  {
+    "code": "S02",
+    "category": "search",
+    "concept": "탐색 순서",
+    "difficulty": 2,
+    "title": "BFS 방문 순서가 이상해",
+    "body": "1번 노드부터 BFS 탐색 순서를 반환해. 작은 번호의 이웃부터 방문하는 규칙이 있어.",
+    "buggy_code": "def solve(data):\n    from collections import deque\n    graph = {int(k):v for k,v in data['graph'].items()}\n    q = deque([1])\n    visited = {1}\n    order = []\n    while q:\n        now = q.popleft()\n        order.append(now)\n        for nxt in sorted(graph.get(now, []), reverse=True):\n            if nxt not in visited:\n                visited.add(nxt)\n                q.append(nxt)\n    return order",
+    "original_line": "for nxt in sorted(graph.get(now, []), reverse=True):",
+    "accepted_patches": [
+      "for nxt in sorted(graph.get(now, [])):"
+    ],
+    "case_options": [
+      {
+        "input": {
+          "graph": {
+            "1": [
+              2
+            ],
+            "2": [
+              3
+            ],
+            "3": []
+          }
+        },
+        "expected": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "input": {
+          "graph": {
+            "1": [
+              2,
+              3
+            ],
+            "2": [],
+            "3": []
+          }
+        },
+        "expected": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "input": {
+          "graph": {
+            "1": []
+          }
+        },
+        "expected": [
+          1
+        ]
+      }
+    ],
+    "counterexample_index": 1,
+    "hint": "BFS의 순서 규칙을 다시 확인해.",
+    "explanation": "문제에서 작은 번호의 이웃부터 방문하도록 요구했으므로 오름차순으로 정렬해야 해.",
+    "is_active": true
+  },
+  {
+    "code": "S03",
+    "category": "search",
+    "concept": "방문 처리",
+    "difficulty": 2,
+    "title": "대각선 섬이 연결되었다?",
+    "body": "섬은 상하좌우로 붙은 1만 연결된다고 정의했어. DFS로 섬 개수를 세어.",
+    "buggy_code": "def solve(data):\n    n, m = len(data), len(data[0])\n    seen = set()\n    count = 0\n    directions = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,1)]\n    for r in range(n):\n        for c in range(m):\n            if not data[r][c] or (r,c) in seen:\n                continue\n            count += 1\n            stack = [(r,c)]\n            seen.add((r,c))\n            while stack:\n                x,y = stack.pop()\n                for dx,dy in directions:\n                    nx,ny = x+dx,y+dy\n                    if 0<=nx<n and 0<=ny<m and data[nx][ny] and (nx,ny) not in seen:\n                        seen.add((nx,ny))\n                        stack.append((nx,ny))\n    return count",
+    "original_line": "directions = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,1)]",
+    "accepted_patches": [
+      "directions = [(-1,0),(1,0),(0,-1),(0,1)]"
+    ],
+    "case_options": [
+      {
+        "input": [
+          [
+            1,
+            1
+          ]
+        ],
+        "expected": 1
+      },
+      {
+        "input": [
+          [
+            0
+          ]
+        ],
+        "expected": 0
+      },
+      {
+        "input": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "expected": 2
+      }
+    ],
+    "counterexample_index": 2,
+    "hint": "섬이 대각선으로 닿았을 때도 한 덩어리일까?",
+    "explanation": "상하좌우 4방향만 허용되는 문제에서 대각선 방향을 추가하면 서로 다른 섬이 합쳐져 버려.",
+    "is_active": true
+  },
+  {
+    "code": "S04",
+    "category": "search",
+    "concept": "최단 거리 계산",
+    "difficulty": 3,
+    "title": "BFS의 잘못된 거리",
+    "body": "무가중치 그래프에서 start부터 target까지 최단 간선 수를 반환해.",
+    "buggy_code": "def solve(data):\n    from collections import deque\n    graph = {int(k):v for k,v in data['graph'].items()}\n    start, target = data['start'], data['target']\n    q = deque([start])\n    dist = {start:0}\n    while q:\n        now = q.popleft()\n        if now == target:\n            return len(q)\n        for nxt in graph.get(now, []):\n            if nxt not in dist:\n                dist[nxt] = dist[now]+1\n                q.append(nxt)\n    return -1",
+    "original_line": "return len(q)",
+    "accepted_patches": [
+      "return dist[now]"
+    ],
+    "case_options": [
+      {
+        "input": {
+          "graph": {
+            "1": [
+              2
+            ],
+            "2": [
+              3
+            ],
+            "3": []
+          },
+          "start": 1,
+          "target": 3
+        },
+        "expected": 2
+      },
+      {
+        "input": {
+          "graph": {
+            "1": [
+              2
+            ]
+          },
+          "start": 1,
+          "target": 1
+        },
+        "expected": 0
+      },
+      {
+        "input": {
+          "graph": {
+            "1": [],
+            "2": []
+          },
+          "start": 1,
+          "target": 2
+        },
+        "expected": -1
+      }
+    ],
+    "counterexample_index": 0,
+    "hint": "큐에 남은 노드 수와 이동 거리는 다른 값이야.",
+    "explanation": "큐 길이는 탐색 중 대기 노드 수일 뿐 최단 거리가 아니야. 별도로 기록한 dist[now]를 사용해야 해.",
+    "is_active": true
+  },
+  {
+    "code": "S05",
+    "category": "search",
+    "concept": "그래프 진입차수",
+    "difficulty": 3,
+    "title": "선행 작업의 순서",
+    "body": "0부터 n-1까지 작업의 선행 관계를 위상정렬해. 간선 a→b는 a 다음에 b를 처리해야 한다는 뜻이야.",
+    "buggy_code": "def solve(data):\n    from collections import deque\n    n, edges = data['n'], data['edges']\n    graph = [[] for _ in range(n)]\n    indeg = [0]*n\n    for a, b in edges:\n        graph[a].append(b)\n        indeg[a] += 1\n    q = deque(i for i in range(n) if indeg[i] == 0)\n    order = []\n    while q:\n        now = q.popleft()\n        order.append(now)\n        for nxt in graph[now]:\n            indeg[nxt] -= 1\n            if indeg[nxt] == 0:\n                q.append(nxt)\n    return order if len(order)==n else []",
+    "original_line": "indeg[a] += 1",
+    "accepted_patches": [
+      "indeg[b] += 1"
+    ],
+    "case_options": [
+      {
+        "input": {
+          "n": 3,
+          "edges": []
+        },
+        "expected": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "input": {
+          "n": 3,
+          "edges": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              2
+            ]
+          ]
+        },
+        "expected": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "input": {
+          "n": 2,
+          "edges": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        },
+        "expected": []
+      }
+    ],
+    "counterexample_index": 1,
+    "hint": "a→b일 때 선행 작업은 a야. 진입하는 쪽은 누구일까?",
+    "explanation": "간선 a→b는 b의 선행 조건을 하나 증가시켜야 해. 따라서 indeg[b]를 올리는 것이 맞아.",
+    "is_active": true
+  },
+  {
+    "code": "S06",
+    "category": "search",
+    "concept": "완전탐색·가지치기",
+    "difficulty": 3,
+    "title": "첫 숫자를 놓친 부분집합",
+    "body": "양의 정수 리스트에서 일부 원소를 골라 target 합을 만들 수 있는지 DFS로 판별해.",
+    "buggy_code": "def solve(data):\n    a, target = data['a'], data['target']\n    def dfs(start, total):\n        if total == target:\n            return True\n        if total > target:\n            return False\n        for i in range(start+1, len(a)):\n            if dfs(i+1, total+a[i]):\n                return True\n        return False\n    return dfs(0, 0)",
+    "original_line": "for i in range(start+1, len(a)):",
+    "accepted_patches": [
+      "for i in range(start, len(a)):"
+    ],
+    "case_options": [
+      {
+        "input": {
+          "a": [
+            2,
+            3,
+            5
+          ],
+          "target": 5
+        },
+        "expected": true
+      },
+      {
+        "input": {
+          "a": [
+            2,
+            3,
+            5
+          ],
+          "target": 0
+        },
+        "expected": true
+      },
+      {
+        "input": {
+          "a": [
+            5,
+            2,
+            3
+          ],
+          "target": 7
+        },
+        "expected": true
+      }
+    ],
+    "counterexample_index": 2,
+    "hint": "start 위치의 숫자부터 선택할 수 있어야 하지 않을까?",
+    "explanation": "start는 현재 선택할 수 있는 첫 인덱스인데 반복문에서 start+1로 시작해 첫 원소를 건너뛰고 있어.",
+    "is_active": true
+  },
+  {
+    "code": "T01",
+    "category": "strategy",
+    "concept": "정렬·그리디 판단",
+    "difficulty": 2,
+    "title": "도크 예약 최적화 실패",
+    "body": "작업 구간 [시작, 종료]에서 최대한 많은 작업을 배정하려고 해. 종료 시각에 다음 작업을 시작할 수 있어.",
+    "buggy_code": "def solve(data):\n    intervals = sorted(data, key=lambda x:x[0])\n    count, finish = 0, 0\n    for start, end in intervals:\n        if start >= finish:\n            count += 1\n            finish = end\n    return count",
+    "original_line": "intervals = sorted(data, key=lambda x:x[0])",
+    "accepted_patches": [
+      "intervals = sorted(data, key=lambda x:x[1])"
+    ],
+    "case_options": [
+      {
+        "input": [
+          [
+            1,
+            10
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "expected": 2
+      },
+      {
+        "input": [
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "expected": 2
+      },
+      {
+        "input": [
+          [
+            2,
+            5
+          ]
+        ],
+        "expected": 1
+      }
+    ],
+    "counterexample_index": 0,
+    "hint": "작업을 많이 하려면 일찍 시작하는 작업이 유리할까, 일찍 끝나는 작업이 유리할까?",
+    "explanation": "작업을 최대한 많이 고르려면 종료 시간이 가장 빠른 구간부터 선택하는 그리디 전략이 유효해.",
+    "is_active": true
+  },
+  {
+    "code": "T02",
+    "category": "strategy",
+    "concept": "경계 조건",
+    "difficulty": 1,
+    "title": "같은 무게도 못 싣는 트럭",
+    "body": "트럭 한 대에 컨테이너 한 개씩 배정할 때, 적재량이 컨테이너 무게 이상이면 실을 수 있어.",
+    "buggy_code": "def solve(data):\n    boxes = sorted(data['boxes'], reverse=True)\n    trucks = sorted(data['trucks'], reverse=True)\n    total = 0\n    for truck in trucks:\n        for i, box in enumerate(boxes):\n            if truck > box:\n                total += box\n                boxes.pop(i)\n                break\n    return total",
+    "original_line": "if truck > box:",
+    "accepted_patches": [
+      "if truck >= box:"
+    ],
+    "case_options": [
+      {
+        "input": {
+          "boxes": [
+            5
+          ],
+          "trucks": [
+            6
+          ]
+        },
+        "expected": 5
+      },
+      {
+        "input": {
+          "boxes": [
+            5
+          ],
+          "trucks": [
+            5
+          ]
+        },
+        "expected": 5
+      },
+      {
+        "input": {
+          "boxes": [
+            9
+          ],
+          "trucks": [
+            3
+          ]
+        },
+        "expected": 0
+      }
+    ],
+    "counterexample_index": 1,
+    "hint": "적재량과 무게가 같을 때도 실을 수 있어야 해.",
+    "explanation": "이상(>=)이어야 동일한 무게의 컨테이너도 실을 수 있어.",
+    "is_active": true
+  },
+  {
+    "code": "T03",
+    "category": "strategy",
+    "concept": "정렬·비교 조건",
+    "difficulty": 2,
+    "title": "병합정렬 카운트 미스터리",
+    "body": "병합 시 왼쪽 마지막 값이 오른쪽 마지막 값보다 *클 때만* 카운트하는 코드야.",
+    "buggy_code": "def solve(data):\n    count = 0\n    def sort(arr):\n        nonlocal count\n        if len(arr) <= 1:\n            return arr\n        mid = len(arr)//2\n        left = sort(arr[:mid])\n        right = sort(arr[mid:])\n        if left[-1] >= right[-1]:\n            count += 1\n        result = []\n        i = j = 0\n        while i < len(left) and j < len(right):\n            if left[i] <= right[j]:\n                result.append(left[i]); i += 1\n            else:\n                result.append(right[j]); j += 1\n        return result + left[i:] + right[j:]\n    sort(data)\n    return count",
+    "original_line": "if left[-1] >= right[-1]:",
+    "accepted_patches": [
+      "if left[-1] > right[-1]:"
+    ],
+    "case_options": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "expected": 0
+      },
+      {
+        "input": [
+          3,
+          2
+        ],
+        "expected": 1
+      },
+      {
+        "input": [
+          1,
+          1
+        ],
+        "expected": 0
+      }
+    ],
+    "counterexample_index": 2,
+    "hint": "문제의 조건은 크거나 같다일까, 엄격히 크다일까?",
+    "explanation": "동일한 값은 큰 값이 아니므로 >=가 아니라 >를 사용해야 해.",
+    "is_active": true
+  },
+  {
+    "code": "T04",
+    "category": "strategy",
+    "concept": "이분탐색 조건",
+    "difficulty": 3,
+    "title": "중복 값의 첫 위치",
+    "body": "정렬된 배열에서 target 이상인 첫 원소의 인덱스(lower bound)를 반환해.",
+    "buggy_code": "def solve(data):\n    a, target = data['a'], data['target']\n    lo, hi = 0, len(a)\n    while lo < hi:\n        mid = (lo+hi)//2\n        if a[mid] <= target:\n            lo = mid+1\n        else:\n            hi = mid\n    return lo",
+    "original_line": "if a[mid] <= target:",
+    "accepted_patches": [
+      "if a[mid] < target:"
+    ],
+    "case_options": [
+      {
+        "input": {
+          "a": [
+            1,
+            2,
+            2,
+            3
+          ],
+          "target": 2
+        },
+        "expected": 1
+      },
+      {
+        "input": {
+          "a": [
+            1,
+            2,
+            3
+          ],
+          "target": 0
+        },
+        "expected": 0
+      },
+      {
+        "input": {
+          "a": [
+            1,
+            2,
+            3
+          ],
+          "target": 4
+        },
+        "expected": 3
+      }
+    ],
+    "counterexample_index": 0,
+    "hint": "lower bound는 target과 같은 값에서 더 왼쪽으로 가야 해.",
+    "explanation": "같은 값까지 건너뛰면 upper bound가 돼. lower bound에서는 <일 때만 오른쪽 경계를 밀어야 해.",
+    "is_active": true
+  },
+  {
+    "code": "T05",
+    "category": "strategy",
+    "concept": "DP 상태 전이",
+    "difficulty": 3,
+    "title": "동전을 다시 쓸 수 없다?",
+    "body": "동전 종류마다 여러 개 사용할 수 있을 때 target을 만드는 최소 동전 개수를 구해. 불가능하면 -1.",
+    "buggy_code": "def solve(data):\n    coins, target = data['coins'], data['target']\n    inf = target+1\n    dp = [inf]*(target+1)\n    dp[0] = 0\n    for coin in coins:\n        for amount in range(target, coin-1, -1):\n            dp[amount] = min(dp[amount], dp[amount-coin]+1)\n    return dp[target] if dp[target] != inf else -1",
+    "original_line": "for amount in range(target, coin-1, -1):",
+    "accepted_patches": [
+      "for amount in range(coin, target+1):"
+    ],
+    "case_options": [
+      {
+        "input": {
+          "coins": [
+            2,
+            3
+          ],
+          "target": 5
+        },
+        "expected": 2
+      },
+      {
+        "input": {
+          "coins": [
+            2
+          ],
+          "target": 4
+        },
+        "expected": 2
+      },
+      {
+        "input": {
+          "coins": [
+            2,
+            3
+          ],
+          "target": 0
+        },
+        "expected": 0
+      }
+    ],
+    "counterexample_index": 1,
+    "hint": "같은 코인을 같은 순회에서 한 번 더 사용하려면 진행 방향은?",
+    "explanation": "무제한 동전 문제는 금액을 작은 쪽에서 큰 쪽으로 순회하여 이번 동전으로 만든 값을 다시 사용할 수 있어야 해.",
+    "is_active": true
+  },
+  {
+    "code": "T06",
+    "category": "strategy",
+    "concept": "DP 상태 전이",
+    "difficulty": 3,
+    "title": "배낭에 같은 물건 두 번",
+    "body": "0/1 배낭: 각 물건을 최대 한 번만 담아 가치 합을 최대로 구해.",
+    "buggy_code": "def solve(data):\n    items, capacity = data['items'], data['capacity']\n    dp = [0]*(capacity+1)\n    for weight, value in items:\n        for c in range(weight, capacity+1):\n            dp[c] = max(dp[c], dp[c-weight]+value)\n    return dp[capacity]",
+    "original_line": "for c in range(weight, capacity+1):",
+    "accepted_patches": [
+      "for c in range(capacity, weight-1, -1):"
+    ],
+    "case_options": [
+      {
+        "input": {
+          "items": [
+            [
+              2,
+              3
+            ]
+          ],
+          "capacity": 2
+        },
+        "expected": 3
+      },
+      {
+        "input": {
+          "items": [
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          "capacity": 0
+        },
+        "expected": 0
+      },
+      {
+        "input": {
+          "items": [
+            [
+              2,
+              3
+            ]
+          ],
+          "capacity": 4
+        },
+        "expected": 3
+      }
+    ],
+    "counterexample_index": 2,
+    "hint": "0/1 배낭은 이번 물건을 중복 사용하면 안 돼.",
+    "explanation": "0/1 배낭의 1차원 DP는 용량을 내림차순으로 순회해야 같은 물건을 한 번만 사용해.",
+    "is_active": true
+  }
+]

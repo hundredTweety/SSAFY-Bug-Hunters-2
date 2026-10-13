@@ -1,0 +1,5 @@
+*.svg text
+*.json text
+*.sh text eol=lf
+*.command text eol=lf
+*.bat text eol=crlf

@@ -1,0 +1,32 @@
+# BUG HUNTERS 2.0 — Render Web + Neon external PostgreSQL.
+# This Blueprint deliberately DOES NOT provision Render's 30-day free PostgreSQL.
+# Create a Neon Free database first, then provide its pooled PostgreSQL URL securely.
+services:
+  - type: web
+    name: ssafy-bug-hunters-2
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: ./start.sh
+    healthCheckPath: /healthz/
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DJANGO_DEBUG
+        value: '0'
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: RAID_INVITE_CODE
+        sync: false
+      - key: RAID_MAX_HP
+        value: '1000'
+      - key: RAID_DAMAGE
+        value: '20'
+      - key: RAID_MAX_CLEARS_PER_PLAYER
+        value: '3'
+      - key: RAID_RESULTS_PUBLIC
+        value: '0'
+      - key: WEB_CONCURRENCY
+        value: '2'

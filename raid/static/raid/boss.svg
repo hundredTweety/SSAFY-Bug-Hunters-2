@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="410" viewBox="0 0 420 410" role="img" aria-label="보라색 버그로드 보스">
+<defs>
+  <radialGradient id="halo"><stop stop-color="#8c64ff" stop-opacity=".45"/><stop offset="1" stop-color="#8c64ff" stop-opacity="0"/></radialGradient>
+  <linearGradient id="body" x1=".15" x2=".82" y1="0" y2="1"><stop stop-color="#a39bff"/><stop offset=".5" stop-color="#806beb"/><stop offset="1" stop-color="#5340a6"/></linearGradient>
+  <linearGradient id="horn" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#fbd783"/><stop offset="1" stop-color="#f18c70"/></linearGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="9"/></filter>
+</defs>
+<ellipse cx="211" cy="209" rx="191" ry="183" fill="url(#halo)"/>
+<ellipse cx="208" cy="358" rx="127" ry="18" fill="#07091f" opacity=".4"/>
+<g transform="rotate(-8 205 188)">
+  <path d="M123 120Q76 69 100 30Q147 61 163 118Z" fill="url(#horn)" stroke="#3e2b77" stroke-width="7"/>
+  <path d="M253 112Q284 48 326 38Q331 87 299 132Z" fill="url(#horn)" stroke="#3e2b77" stroke-width="7"/>
+  <path d="M111 200Q70 169 48 200Q47 231 105 244Z" fill="#7066db" stroke="#382c81" stroke-width="7"/>
+  <path d="M304 203Q349 173 371 204Q367 236 308 244Z" fill="#7066db" stroke="#382c81" stroke-width="7"/>
+  <path d="M101 190Q98 107 205 104Q326 103 325 208L318 283Q301 345 210 345Q111 342 103 282Z" fill="url(#body)" stroke="#3e2c83" stroke-width="9"/>
+  <path d="M129 178Q140 142 178 153" fill="none" stroke="#c1b7ff" stroke-width="16" stroke-linecap="round" opacity=".44"/>
+  <ellipse cx="160" cy="217" rx="35" ry="46" fill="#28224c"/><ellipse cx="263" cy="217" rx="35" ry="46" fill="#28224c"/>
+  <ellipse cx="169" cy="204" rx="13" ry="17" fill="white"/><ellipse cx="272" cy="204" rx="13" ry="17" fill="white"/>
+  <ellipse cx="146" cy="265" rx="24" ry="13" fill="#fd87ba" opacity=".66"/><ellipse cx="277" cy="265" rx="24" ry="13" fill="#fd87ba" opacity=".66"/>
+  <path d="M187 262Q209 291 235 261" fill="none" stroke="#352455" stroke-width="9" stroke-linecap="round"/>
+  <path d="M193 267L204 279L212 269L222 278L230 266" fill="#fff6f7" stroke="#352455" stroke-width="2"/>
+  <path d="M134 321Q117 366 157 370L186 347M261 345L284 369Q326 366 291 314" fill="#6654c8" stroke="#3e2c83" stroke-width="7" stroke-linejoin="round"/>
+  <rect x="184" y="136" width="52" height="28" rx="8" fill="#fbd885" stroke="#6d408e" stroke-width="5"/>
+  <path d="M202 142V155M217 142V155" stroke="#6d408e" stroke-width="5" stroke-linecap="round"/>
+</g>
+<path d="M46 114l9-18 9 18 18 8-18 8-9 17-9-17-18-8z" fill="#ffd980"/>
+<path d="M348 106l5-11 5 11 11 5-11 5-5 10-5-10-11-5z" fill="#b6fcf2"/>
+<circle cx="344" cy="296" r="7" fill="#ffd980"/><circle cx="69" cy="289" r="5" fill="#b6fcf2"/>
+</svg>

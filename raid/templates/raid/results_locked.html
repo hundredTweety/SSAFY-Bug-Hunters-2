@@ -1,0 +1,5 @@
+{% extends 'raid/base.html' %}
+{% block title %}결과 잠금 | BUG HUNTERS{% endblock %}
+{% block content %}
+<section class="center-page"><div class="lock-emoji">🔒</div><span class="eyebrow">CLASS LEARNING REPORT</span><h1>취약 개념 TOP 5는 아직 잠겨 있어!</h1><p>버그로드를 쓰러뜨리면 우리가 많이 실수한 구현 개념을 공개할 거야. 운영자는 관리자로 접속해 격파 전에도 확인할 수 있어.</p><p class="remaining-label">남은 보스 HP <strong>{{state.remaining_hp}} / {{state.max_hp}}</strong></p><a class="btn-primary" href="{% url 'home' %}#missions">버그 사냥하러 가기 →</a></section>
+{% endblock %}

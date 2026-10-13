@@ -1,0 +1,24 @@
+{% load static %}
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101326">
+  <meta name="description" content="SSAFY 1반 BUG HUNTERS 2.0 — IM 디버깅 공동 보스 레이드">
+  <title>{% block title %}BUG HUNTERS 2.0{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'raid/site.css' %}">
+</head>
+<body>
+<header class="global-header"><div class="container header-inner">
+  <a class="brand" href="{% url 'home' %}"><span class="brand-mark">🐛</span> BUG <em>HUNTERS</em> <small>2.0</small></a>
+  <nav class="main-nav" aria-label="주 메뉴"><a href="{% url 'home' %}#missions">미션</a><a href="{% url 'results' %}">분석 리포트</a>{% if player %}<span class="nav-user">{{player.nickname}} 헌터</span>{% endif %}</nav>
+</div></header>
+<main class="container">
+{% if messages %}<div class="alerts" role="status">{% for msg in messages %}<div class="alert {% if msg.tags %}alert-{{msg.tags}}{% endif %}">{{msg}}</div>{% endfor %}</div>{% endif %}
+{% block content %}{% endblock %}
+</main>
+<footer class="container site-footer"><span>SSAFY Python 1반 · 비공식 반 공동 학습 프로젝트</span><span>개인 순위 없음 · 자유 참여 · 동일 혜택</span></footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>
