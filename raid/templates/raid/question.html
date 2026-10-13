@@ -43,7 +43,7 @@ const rows=document.querySelectorAll('input[name="line"]'),button=document.getEl
 rows.forEach(r=>r.addEventListener('change',()=>{
  button.disabled=false;
  step.hidden=true;
- document.querySelectorAll('input[name="choice"]').forEach(c=>c.checked=false);
+ document.querySelectorAll('input[name=choice]').forEach(c=>c.checked=false);
  document.getElementById('line-status').textContent=r.value+'번 줄 선택됨';
 }));
 if(button)button.addEventListener('click',()=>{
