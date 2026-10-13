@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from django.test import TestCase,override_settings
+from django.test import Client,TestCase,override_settings
 from django.urls import reverse
 from raid.logic import check_patch,target_line
 from raid.models import Player,Question,RaidState,Attempt,Clear
@@ -25,6 +25,26 @@ class BugHuntersTests(TestCase):
             'patch':q.accepted_patches[0] if patch_ok else 'print(999)',
             'counterexample':str(q.counterexample_index if case_ok else (q.counterexample_index+1)%3),
         })
+
+    def test_two_independent_players_share_boss_hp(self):
+        # Each client has its own session, but both must affect the same shared boss.
+        question = Question.objects.get(code='A01')
+        for nickname in ('헌터가', '헌터나'):
+            client = Client()
+            joined = client.post(reverse('join'), {
+                'nickname': nickname, 'consent': 'yes',
+            })
+            self.assertEqual(joined.status_code, 302)
+            attack = client.post(reverse('submit', args=[question.pk]), {
+                'line': str(target_line(question)),
+                'patch': question.accepted_patches[0],
+            })
+            self.assertEqual(attack.status_code, 302)
+            self.assertEqual(client.get(reverse('api_status')).json()['hp'],
+                             1000 - 20 * (1 if nickname == '헌터가' else 2))
+        self.assertEqual(Player.objects.count(), 2)
+        self.assertEqual(Clear.objects.filter(damage=20).count(), 2)
+        self.assertEqual(RaidState.objects.get(pk=1).remaining_hp, 960)
 
     def test_first_clear_damage_only_once(self):
         self.join()
