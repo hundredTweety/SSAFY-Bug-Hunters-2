@@ -18,9 +18,11 @@ class BugHuntersTests(TestCase):
     def join(self,name='헌터'):
         return self.client.post(reverse('join'),{'nickname':name,'consent':'yes'})
 
-    def submit(self,code,patch_ok=True,case_ok=True):
+    def submit(self,code,patch_ok=True,case_ok=True,line_ok=True):
         q=Question.objects.get(code=code)
+        expected=target_line(q)
         return self.client.post(reverse('submit',args=[q.pk]),{
+            'line':str(expected if line_ok else (1 if expected != 1 else 2)),
             'choice':str(q.choices.index(q.accepted_patches[0]) if patch_ok else next(i for i,v in enumerate(q.choices) if v != q.accepted_patches[0])),
         })
 
@@ -30,11 +32,31 @@ class BugHuntersTests(TestCase):
         for n, nickname in enumerate(('헌터가','헌터나'),start=1):
             client=Client()
             self.assertEqual(client.post(reverse('join'),{'nickname':nickname,'consent':'yes'}).status_code,302)
-            self.assertEqual(client.post(reverse('submit',args=[q.pk]),{'choice':str(choice)}).status_code,302)
+            self.assertEqual(client.post(reverse('submit',args=[q.pk]),{'choice':str(choice),'line':str(target_line(q))}).status_code,302)
             self.assertEqual(client.get(reverse('api_status')).json()['hp'],1000-20*n)
         self.assertEqual(Player.objects.count(),2)
         self.assertEqual(Clear.objects.filter(damage=20).count(),2)
         self.assertEqual(RaidState.objects.get(pk=1).remaining_hp,960)
+
+    def test_wrong_line_even_with_correct_choice_does_not_attack(self):
+        self.join()
+        self.submit('A01',line_ok=False)
+        self.assertEqual(Clear.objects.count(),0)
+        self.assertEqual(Attempt.objects.count(),1)
+        self.assertFalse(Attempt.objects.first().is_correct)
+        self.assertEqual(RaidState.objects.get(pk=1).remaining_hp,1000)
+        self.submit('A01')
+        self.assertEqual(Clear.objects.count(),1)
+        self.assertEqual(RaidState.objects.get(pk=1).remaining_hp,980)
+
+    def test_no_line_cannot_attack(self):
+        self.join()
+        q=Question.objects.get(code='A01')
+        choice=q.choices.index(q.accepted_patches[0])
+        for line in ('','0','999','wrong'):
+            self.client.post(reverse('submit',args=[q.pk]),{'choice':str(choice),'line':line})
+        self.assertEqual(Attempt.objects.count(),0)
+        self.assertEqual(Clear.objects.count(),0)
 
     def test_first_clear_damage_only_once(self):
         self.join()
@@ -57,6 +79,8 @@ class BugHuntersTests(TestCase):
         q=Question.objects.get(code='A06')
         page=self.client.get(reverse('question',args=[q.pk]))
         self.assertContains(page,'name="choice"',count=4)
+        self.assertContains(page,'name="line"')
+        self.assertContains(page,'id="choice-step" hidden')
         self.assertNotContains(page,'name="patch"')
         self.assertNotContains(page,'name="counterexample"')
         self.submit('A06',patch_ok=False)
@@ -99,6 +123,7 @@ class BugHuntersTests(TestCase):
         q=Question.objects.get(code='A06')
         page=self.client.get(reverse('question',args=[q.pk])).content.decode()
         self.assertEqual(page.count('name="choice"'),4)
+        self.assertIn('name="line"',page)
         self.assertNotIn(q.explanation,page)
 
     def test_no_anonymous_submit(self):
