@@ -1,7 +1,8 @@
 {% extends 'raid/base.html' %}
 {% block title %}{{ question.title }} | BUG HUNTERS{% endblock %}
 {% block content %}
-<div class="backline"><a href="{% url 'home' %}#missions">← 미션 목록</a><span>MISSION {{ question.code }}</span></div>
+<div class="backline"><a href="{% url 'home' %}#missions">← 미션 목록</a><span>MISSION {{ question.code }}{% if demo_mode %} · 🎮 체험 모드{% endif %}</span></div>
+{% if demo_mode %}<div class="demo-mini-banner"><strong>🎮 이벤트 종료 · 체험 플레이</strong><span>정답을 맞혀도 실제 보스 HP·참여 기록·통계는 변경되지 않아요.</span></div>{% endif %}
 <div class="mission-page-grid"><section class="question-shell">
   <div class="question-header"><span class="eyebrow">{{ category_name }} · {{ question.concept }}</span><span class="badge badge-{% if question.difficulty == 1 %}easy{% elif question.difficulty == 2 %}normal{% else %}hard{% endif %}">{% if question.difficulty == 1 %}EASY{% elif question.difficulty == 2 %}NORMAL{% else %}HARD{% endif %}</span></div>
   <div class="question-body"><h1>{{ question.title }}</h1><p>{{ question.body }}</p>
@@ -32,7 +33,7 @@
       <h2>DEBUG COMPLETE!</h2><p>버그를 정확하게 찾아 고쳤어!</p>
       <p class="explanation"><b>버그 위치: {{ correct_line }}번 줄</b><br><code>{{ question.accepted_patches.0 }}</code></p>
       <p class="explanation"><b>왜 틀렸을까?</b><br>{{ question.explanation }}</p>
-      <p class="damage-note">이 미션의 보스 공격 기여: {{ clear.damage }} HP</p>
+      {% if demo_mode %}<p class="damage-note">✅ 체험 성공! 실제 행사 기록과 보스 HP는 변경되지 않았어요.</p>{% else %}<p class="damage-note">이 미션의 보스 공격 기여: {{ clear.damage }} HP</p>{% endif %}
       <div class="bug-next">
         {% if next_question %}
           <a class="btn-primary" href="{% url 'question' next_question.pk %}">다음 문제 풀기 →</a>
@@ -53,13 +54,13 @@
       </div>
       <input id="hint-used" type="hidden" name="hint_used" value="0">
       <div class="hint-area"><button type="button" class="hint-button" id="hint-toggle" aria-expanded="false">💡 힌트 보기 (자유롭게)</button><p id="hint-text" class="hint-text" hidden>{{ question.hint }}</p></div>
-      <div class="submit-row"><p>현재 시도 횟수 {{ attempts }}회<br><small>오답이어도 다시 수정할 수 있어.</small></p><button class="btn-primary" type="submit">🐛 수정안 제출하고 공격 →</button></div>
+      <div class="submit-row"><p>현재 시도 횟수 {{ attempts }}회<br><small>오답이어도 다시 수정할 수 있어.</small></p><button class="btn-primary" type="submit">{% if demo_mode %}🐛 수정안 제출하고 체험 완료 →{% else %}🐛 수정안 제출하고 공격 →{% endif %}</button></div>
     </section>
     </form>
   {% endif %}
 </section>
-<aside class="question-aside"><div class="info-card"><span class="eyebrow">MISSION GUIDE</span><h3>미션 진행 방법</h3><p>1. 버그가 있는 코드 줄을 선택<br>2. 정답 줄이면 수정안 4지선다 공개<br>3. 올바른 수정안을 선택하면 보스 공격<br>4. 정답 후 다음 미션으로 이동</p></div>
-<div class="info-card"><span class="eyebrow">BOSS STATUS</span><h3>❤️ {{ state.remaining_hp }} / {{ state.max_hp }} HP</h3><p>한 문제 정답당 최대 20 HP 감소. 보스 체력은 모두가 공유해.</p></div>
+<aside class="question-aside"><div class="info-card"><span class="eyebrow">MISSION GUIDE</span><h3>미션 진행 방법</h3><p>1. 버그가 있는 코드 줄을 선택<br>2. 정답 줄이면 수정안 4지선다 공개<br>3. 올바른 수정안을 선택하면 {% if demo_mode %}체험 미션 성공{% else %}보스 공격{% endif %}<br>4. 정답 후 다음 미션으로 이동</p></div>
+<div class="info-card"><span class="eyebrow">BOSS STATUS</span><h3>❤️ {{ state.remaining_hp }} / {{ state.max_hp }} HP</h3><p>{% if demo_mode %}2026년 10월 행사 격파 기록입니다. 체험 중에는 HP가 바뀌지 않아요.{% else %}한 문제 정답당 최대 20 HP 감소. 보스 체력은 모두가 공유해.{% endif %}</p></div>
 <a class="outline-button" href="{% url 'home' %}#missions">다른 미션 선택 ↗</a></aside>
 </div>
 {% endblock %}
