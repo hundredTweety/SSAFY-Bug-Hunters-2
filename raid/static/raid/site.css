@@ -29,3 +29,16 @@
 #reveal-options:disabled{opacity:.45;cursor:not-allowed}
 #choice-step{scroll-margin-top:90px}
 @media(max-width:610px){.bug-next{align-items:stretch;flex-direction:column}.bug-next button{width:100%}}
+
+/* Portfolio demonstration: visibly separate the ended event from anonymous practice. */
+.demo-banner{display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap;background:linear-gradient(110deg,#25224f,#152f3e);border:1px solid #8474c4;border-radius:18px;padding:19px 23px;margin:24px 0 18px}
+.demo-banner>div{flex:1;min-width:240px}
+.demo-banner strong{font-size:21px;color:#f5e9ff}
+.demo-banner p{color:#d5dced;line-height:1.6;margin:4px 0 0;font-size:14px}
+.demo-label{background:#c5b3ff;color:#131329;border-radius:999px;padding:5px 11px;font-size:11px;letter-spacing:.07em;font-weight:800}
+.demo-banner .outline-button{white-space:nowrap}
+.demo-mini-banner{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#25224f;border:1px solid #8474c4;border-radius:13px;padding:11px 17px;margin:16px 0}
+.demo-mini-banner strong{color:#e9deff}
+.demo-mini-banner span{color:#d0d7e9;font-size:13px}
+.player-banner form{margin:0}
+@media(max-width:650px){.demo-banner{align-items:flex-start;padding:15px}.demo-banner .outline-button{width:100%;text-align:center}.demo-banner strong{font-size:18px}}
