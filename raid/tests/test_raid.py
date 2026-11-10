@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 from django.test import Client,TestCase,override_settings
+from django.contrib.sessions.models import Session
+from raid.demo import COOKIE_NAME
 from django.urls import reverse
 from raid.logic import check_patch,target_line
 from raid.models import Player,Question,RaidState,Attempt,Clear
@@ -303,3 +305,53 @@ class BugHuntersTests(TestCase):
         self.assertEqual(Attempt.objects.count(),1)
         self.assertEqual(Clear.objects.count(),1)
         self.assertEqual(RaidState.objects.get(pk=1).remaining_hp,0)
+
+    @override_settings(RAID_DEMO_MODE=True, SESSION_SAVE_EVERY_REQUEST=False)
+    def test_demo_read_and_play_create_no_django_session_rows(self):
+        """Page loads and practice submissions must not persist anonymous sessions."""
+        q=Question.objects.get(code='A01')
+        self.assertEqual(Session.objects.count(),0)
+        self.client.get(reverse('home'))
+        self.client.get(reverse('question',args=[q.pk]))
+        self.client.get(reverse('results'))
+        self.assertEqual(Session.objects.count(),0)
+        self.client.post(reverse('check_line',args=[q.pk]),{'line':str(target_line(q))})
+        self.assertIn(COOKIE_NAME,self.client.cookies)
+        wrong=next(i for i,patch in enumerate(q.choices) if patch not in q.accepted_patches)
+        self.client.post(reverse('submit',args=[q.pk]),{'choice':str(wrong)})
+        self.client.post(reverse('submit',args=[q.pk]),{
+            'choice':str(q.choices.index(q.accepted_patches[0]))})
+        self.client.get(reverse('home'))
+        self.client.post(reverse('reset_demo'))
+        self.assertEqual(Session.objects.count(),0)
+        self.assertEqual(Attempt.objects.count(),0)
+        self.assertEqual(Clear.objects.count(),0)
+
+    @override_settings(RAID_DEMO_MODE=True, SESSION_SAVE_EVERY_REQUEST=False)
+    def test_demo_cookie_tampering_resets_practice_not_event_data(self):
+        q=Question.objects.get(code='A01')
+        self.client.post(reverse('check_line',args=[q.pk]),{'line':str(target_line(q))})
+        self.assertContains(self.client.get(reverse('question',args=[q.pk])),'name="choice"',count=4)
+        self.client.cookies[COOKIE_NAME]='tampered-practice-cookie'
+        page=self.client.get(reverse('question',args=[q.pk]))
+        self.assertNotContains(page,'name="choice"')
+        self.client.post(reverse('submit',args=[q.pk]),{
+            'choice':str(q.choices.index(q.accepted_patches[0]))})
+        self.assertEqual(Player.objects.count(),0)
+        self.assertEqual(Attempt.objects.count(),0)
+        self.assertEqual(Clear.objects.count(),0)
+        self.assertEqual(Session.objects.count(),0)
+
+    @override_settings(RAID_DEMO_MODE=True, SESSION_SAVE_EVERY_REQUEST=False)
+    def test_admin_login_still_uses_database_sessions(self):
+        from django.contrib.auth import get_user_model
+        user=get_user_model().objects.create_superuser(
+            username='demoadmin',email='',password='safe-test-password-123456')
+        self.assertEqual(Session.objects.count(),0)
+        self.assertTrue(self.client.login(username=user.username,password='safe-test-password-123456'))
+        self.assertEqual(Session.objects.count(),1)
+        admin_page=self.client.get(reverse('admin:index'))
+        self.assertEqual(admin_page.status_code,200)
+        self.assertEqual(Session.objects.count(),1)
+        self.client.get(reverse('home'))
+        self.assertEqual(Session.objects.count(),1)
