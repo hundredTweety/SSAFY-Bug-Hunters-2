@@ -255,7 +255,7 @@ python manage.py collectstatic --noinput && python manage.py test
 │   ├── stats.py           # 첫 제출 기준, 최소 표본 조건을 둔 취약 개념 통계
 │   ├── admin.py           # 참여자별 읽기 전용 기록 조회
 │   ├── question_bank.json # 직접 출제한 문제 32개
-│   ├── management/commands/  # seed_questions · bootstrap_admin · reset_raid
+│   ├── management/commands/  # prepare_runtime · seed_questions · bootstrap_admin · reset_raid
 │   └── tests/test_raid.py
 ├── raidsite/settings.py   # 환경변수 기반 설정, 운영 환경 fail-fast 검증
 ├── scripts/validate_bank.py

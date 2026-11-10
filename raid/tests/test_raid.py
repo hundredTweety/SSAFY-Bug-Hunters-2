@@ -355,3 +355,22 @@ class BugHuntersTests(TestCase):
         self.assertEqual(Session.objects.count(),1)
         self.client.get(reverse('home'))
         self.assertEqual(Session.objects.count(),1)
+
+    def test_prepare_runtime_is_idempotent_and_keeps_event_data(self):
+        import os
+        from io import StringIO
+        from unittest import mock
+        from django.contrib.auth import get_user_model
+        from django.core.management import call_command
+        self.join()
+        self.submit('A01')
+        before=(Player.objects.count(),Attempt.objects.count(),Clear.objects.count(),
+                RaidState.objects.get(pk=1).remaining_hp,Question.objects.count())
+        with mock.patch.dict(os.environ,{'ADMIN_BOOTSTRAP_PASSWORD':'startup-test-password-1234'}):
+            for _ in range(2):
+                call_command('prepare_runtime',verbosity=0,stdout=StringIO())
+        after=(Player.objects.count(),Attempt.objects.count(),Clear.objects.count(),
+               RaidState.objects.get(pk=1).remaining_hp,Question.objects.count())
+        self.assertEqual(before,after)
+        self.assertEqual(Question.objects.count(),len(BANK))
+        self.assertEqual(get_user_model().objects.filter(username='bughunters_admin').count(),1)
