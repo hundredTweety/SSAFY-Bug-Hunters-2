@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 from .models import Player, Question, RaidState, Attempt, Clear
 from .logic import check_patch, target_line
 from .stats import confusion_stats
+from .demo import demo_state, save_demo_state, clear_demo_state, MAX_ATTEMPTS
 
 CATEGORY_META = [
     {'code':'array','name':'배열·문자열','icon':'🔤','desc':'인덱스, 문자열, 슬라이딩 윈도우','tone':'violet'},
@@ -38,8 +39,7 @@ def current_player(request):
 
 def demo_cleared_ids(request):
     """Anonymous demo progression in this browser only; no live raid tables change."""
-    return {int(value) for value in request.session.get('demo_cleared', [])
-            if str(value).isdigit()}
+    return set(demo_state(request)['c'])
 
 def demo_next_question(request, current_question):
     questions = list(Question.objects.filter(is_active=True).order_by('difficulty', 'code'))
@@ -51,7 +51,7 @@ def demo_next_question(request, current_question):
                  if question.pk not in cleared), None)
 
 def demo_attempts(request, pk):
-    return request.session.get('demo_attempts', {}).get(str(pk), 0)
+    return demo_state(request)['a'].get(str(pk), 0)
 
 def home(request):
     demo_mode=settings.RAID_DEMO_MODE
@@ -127,7 +127,8 @@ def question_detail(request,pk):
     state=ensure_state()
     code_lines=[]
     correct_line=target_line(question)
-    line_verified=request.session.get(line_verification_key(pk))==correct_line
+    line_verified=(pk in demo_state(request)['v']) if demo_mode else (
+        request.session.get(line_verification_key(pk))==correct_line)
     for num, content in enumerate(question.buggy_code.splitlines(),start=1):
         code_lines.append({'num':num,'content':content})
     return render(request,'raid/question.html',{
@@ -152,13 +153,25 @@ def check_line(request,pk):
         return redirect('question',pk=pk)
     key=line_verification_key(pk)
     raw=(request.POST.get('line') or '').strip()
-    if raw.isdigit() and int(raw)==target_line(question):
+    matched=raw.isdigit() and int(raw)==target_line(question)
+    if demo_mode:
+        state=demo_state(request)
+        verified=set(state['v'])
+        if matched:
+            verified.add(pk)
+        else:
+            verified.discard(pk)
+        state['v']=sorted(verified)
+    elif matched:
         request.session[key]=target_line(question)
-        messages.success(request,'버그 위치 발견! 이제 올바른 수정 코드를 선택해 줘.')
     else:
         request.session.pop(key,None)
+    if matched:
+        messages.success(request,'버그 위치 발견! 이제 올바른 수정 코드를 선택해 줘.')
+    else:
         messages.error(request,'그 줄은 버그 위치가 아니야. 코드를 다시 읽고 다른 줄을 선택해 봐.')
-    return redirect('question',pk=pk)
+    response=redirect('question',pk=pk)
+    return save_demo_state(response,request) if demo_mode else response
 
 @require_POST
 def submit_answer(request,pk):
@@ -172,7 +185,7 @@ def submit_answer(request,pk):
         return redirect('question',pk=pk)
     correct_line=target_line(question)
     key=line_verification_key(pk)
-    if request.session.get(key)!=correct_line:
+    if (pk not in demo_state(request)['v']) if demo_mode else request.session.get(key)!=correct_line:
         messages.error(request,'먼저 잘못된 코드 줄을 정확히 찾아야 수정안을 제출할 수 있어.')
         return redirect('question',pk=pk)
     raw_choice=(request.POST.get('choice') or '').strip()
@@ -190,19 +203,17 @@ def submit_answer(request,pk):
     case_ok=True
     is_correct=patch_ok
     if demo_mode:
-        # Anonymous practice never creates a Player, Attempt, Clear or changes RaidState.
-        attempts = dict(request.session.get('demo_attempts', {}))
-        attempts[str(pk)] = min(attempts.get(str(pk), 0) + 1, 9999)
-        request.session['demo_attempts'] = attempts
+        # Only an authenticated signature-bound practice cookie is updated.
+        # Player, Attempt, Clear and RaidState remain untouched.
+        state=demo_state(request)
+        state['a'][str(pk)] = min(state['a'].get(str(pk), 0) + 1, MAX_ATTEMPTS)
         if is_correct:
-            request.session.pop(key, None)
-            cleared = demo_cleared_ids(request)
-            cleared.add(pk)
-            request.session['demo_cleared'] = sorted(cleared)
+            state['v'] = [qid for qid in state['v'] if qid != pk]
+            state['c'] = sorted(set(state['c']) | {pk})
             messages.success(request,'체험 미션 성공! 실제 행사 보스 HP와 기록은 변경되지 않아. 🎉')
         else:
             messages.error(request,'수정안이 정답이 아니야. 다른 코드를 골라 봐!')
-        return redirect('question',pk=pk)
+        return save_demo_state(redirect('question',pk=pk),request)
     # Row lock and all writes inside one transaction (PostgreSQL recommended in deployment).
     ensure_state()
     with transaction.atomic():
@@ -234,13 +245,8 @@ def submit_answer(request,pk):
 def reset_demo(request):
     if not settings.RAID_DEMO_MODE:
         return redirect('home')
-    request.session.pop('demo_cleared', None)
-    request.session.pop('demo_attempts', None)
-    for key in list(request.session.keys()):
-        if key.startswith('bug_line_verified_'):
-            request.session.pop(key, None)
     messages.success(request, '체험 진행 상황만 초기화했어. 실제 행사 기록은 그대로야!')
-    return redirect('home')
+    return clear_demo_state(redirect('home'))
 
 def results(request):
     state=ensure_state()
