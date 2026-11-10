@@ -85,3 +85,6 @@ RAID_MAX_HP = max(1, int(os.getenv('RAID_MAX_HP','1000')))
 RAID_DAMAGE = max(1, int(os.getenv('RAID_DAMAGE','20')))
 RAID_MAX_CLEARS_PER_PLAYER = max(1, int(os.getenv('RAID_MAX_CLEARS_PER_PLAYER','3')))
 RAID_RESULTS_PUBLIC = os.getenv('RAID_RESULTS_PUBLIC','0') == '1'
+
+# Portfolio mode: do not create live players/attempts/clears or modify boss HP.
+RAID_DEMO_MODE = os.getenv('RAID_DEMO_MODE', '0') == '1'
