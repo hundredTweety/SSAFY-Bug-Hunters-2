@@ -36,10 +36,29 @@ def current_player(request):
     except (ValueError,TypeError,AttributeError):
         return None
 
+def demo_cleared_ids(request):
+    """Anonymous demo progression in this browser only; no live raid tables change."""
+    return {int(value) for value in request.session.get('demo_cleared', [])
+            if str(value).isdigit()}
+
+def demo_next_question(request, current_question):
+    questions = list(Question.objects.filter(is_active=True).order_by('difficulty', 'code'))
+    cleared = demo_cleared_ids(request)
+    if not questions:
+        return None
+    index = next((i for i, question in enumerate(questions) if question.pk == current_question.pk), -1)
+    return next((question for question in (questions[index + 1:] + questions[:index + 1])
+                 if question.pk not in cleared), None)
+
+def demo_attempts(request, pk):
+    return request.session.get('demo_attempts', {}).get(str(pk), 0)
+
 def home(request):
-    player=current_player(request)
+    demo_mode=settings.RAID_DEMO_MODE
+    player=None if demo_mode else current_player(request)
     state=ensure_state()
-    cleared_ids=set(Clear.objects.filter(player=player).values_list('question_id',flat=True)) if player else set()
+    cleared_ids=(demo_cleared_ids(request) if demo_mode else
+                 (set(Clear.objects.filter(player=player).values_list('question_id',flat=True)) if player else set()))
     questions=list(Question.objects.filter(is_active=True).order_by('difficulty','code'))
     categories=[]
     for meta in CATEGORY_META:
@@ -50,16 +69,20 @@ def home(request):
     members=Clear.objects.filter(damage__gt=0).values('player_id').distinct().count()
     return render(request,'raid/home.html',{
         'player':player,'state':state,'categories':categories,'cleared_ids':cleared_ids,
+        'demo_mode':demo_mode,
         'invite_required':bool(settings.RAID_INVITE_CODE),
         'total_progress':round((state.max_hp-state.remaining_hp)/state.max_hp*100),
         'members':members,'cleared_total':cleared_total,
-        'personal_clears':Clear.objects.filter(player=player).count() if player else 0,
+        'personal_clears':len(cleared_ids) if demo_mode else (Clear.objects.filter(player=player).count() if player else 0),
         'max_rewarded':settings.RAID_MAX_CLEARS_PER_PLAYER,
         'total_questions':len(questions),
     })
 
 @require_POST
 def join(request):
+    if settings.RAID_DEMO_MODE:
+        messages.info(request,'이벤트가 종료되어 신규 헌터 등록은 중단됐어. 로그인 없이 미션을 체험해 봐!')
+        return redirect('home')
     if current_player(request):
         return redirect('home')
     nickname=(request.POST.get('nickname') or '').strip()
@@ -94,12 +117,13 @@ def next_unsolved_question(player,current_question):
 
 def question_detail(request,pk):
     question=get_object_or_404(Question,pk=pk,is_active=True)
-    player=current_player(request)
-    if not player:
+    demo_mode=settings.RAID_DEMO_MODE
+    player=None if demo_mode else current_player(request)
+    if not demo_mode and not player:
         messages.info(request,'먼저 닉네임을 등록해 줘!')
         return redirect('home')
-    clear=Clear.objects.filter(question=question,player=player).first()
-    attempts=Attempt.objects.filter(question=question,player=player).count()
+    clear=({'damage':0} if pk in demo_cleared_ids(request) else None) if demo_mode else Clear.objects.filter(question=question,player=player).first()
+    attempts=demo_attempts(request,pk) if demo_mode else Attempt.objects.filter(question=question,player=player).count()
     state=ensure_state()
     code_lines=[]
     correct_line=target_line(question)
@@ -108,8 +132,10 @@ def question_detail(request,pk):
         code_lines.append({'num':num,'content':content})
     return render(request,'raid/question.html',{
         'question':question,'player':player,'clear':clear,'attempts':attempts,'state':state,
+        'demo_mode':demo_mode,
         'code_lines':code_lines,'correct_line':correct_line if clear or line_verified else None,
-        'line_verified':line_verified,'next_question':next_unsolved_question(player,question) if clear else None,
+        'line_verified':line_verified,
+        'next_question':(demo_next_question(request,question) if demo_mode else next_unsolved_question(player,question)) if clear else None,
         'choices':list(enumerate(question.choices)) if line_verified else [],
         'category_name':question.get_category_display(),
     })
@@ -117,11 +143,12 @@ def question_detail(request,pk):
 @require_POST
 def check_line(request,pk):
     question=get_object_or_404(Question,pk=pk,is_active=True)
-    player=current_player(request)
-    if not player:
+    demo_mode=settings.RAID_DEMO_MODE
+    player=None if demo_mode else current_player(request)
+    if not demo_mode and not player:
         messages.info(request,'먼저 닉네임을 등록해 줘!')
         return redirect('home')
-    if Clear.objects.filter(player=player,question=question).exists():
+    if (pk in demo_cleared_ids(request)) if demo_mode else Clear.objects.filter(player=player,question=question).exists():
         return redirect('question',pk=pk)
     key=line_verification_key(pk)
     raw=(request.POST.get('line') or '').strip()
@@ -136,10 +163,11 @@ def check_line(request,pk):
 @require_POST
 def submit_answer(request,pk):
     question=get_object_or_404(Question,pk=pk,is_active=True)
-    player=current_player(request)
-    if not player:
+    demo_mode=settings.RAID_DEMO_MODE
+    player=None if demo_mode else current_player(request)
+    if not demo_mode and not player:
         return redirect('home')
-    if Clear.objects.filter(player=player,question=question).exists():
+    if (pk in demo_cleared_ids(request)) if demo_mode else Clear.objects.filter(player=player,question=question).exists():
         messages.info(request,'이미 해결했어! 다른 미션에도 도전해 봐.')
         return redirect('question',pk=pk)
     correct_line=target_line(question)
@@ -161,6 +189,20 @@ def submit_answer(request,pk):
     patch_ok=check_patch(question,line,patch)
     case_ok=True
     is_correct=patch_ok
+    if demo_mode:
+        # Anonymous practice never creates a Player, Attempt, Clear or changes RaidState.
+        attempts = dict(request.session.get('demo_attempts', {}))
+        attempts[str(pk)] = min(attempts.get(str(pk), 0) + 1, 9999)
+        request.session['demo_attempts'] = attempts
+        if is_correct:
+            request.session.pop(key, None)
+            cleared = demo_cleared_ids(request)
+            cleared.add(pk)
+            request.session['demo_cleared'] = sorted(cleared)
+            messages.success(request,'체험 미션 성공! 실제 행사 보스 HP와 기록은 변경되지 않아. 🎉')
+        else:
+            messages.error(request,'수정안이 정답이 아니야. 다른 코드를 골라 봐!')
+        return redirect('question',pk=pk)
     # Row lock and all writes inside one transaction (PostgreSQL recommended in deployment).
     ensure_state()
     with transaction.atomic():
@@ -187,6 +229,18 @@ def submit_answer(request,pk):
         else:
             messages.error(request,'수정안이 정답이 아니야. 버그 위치는 맞았으니 다른 코드를 골라 봐!')
     return redirect('question',pk=pk)
+
+@require_POST
+def reset_demo(request):
+    if not settings.RAID_DEMO_MODE:
+        return redirect('home')
+    request.session.pop('demo_cleared', None)
+    request.session.pop('demo_attempts', None)
+    for key in list(request.session.keys()):
+        if key.startswith('bug_line_verified_'):
+            request.session.pop(key, None)
+    messages.success(request, '체험 진행 상황만 초기화했어. 실제 행사 기록은 그대로야!')
+    return redirect('home')
 
 def results(request):
     state=ensure_state()
