@@ -25,7 +25,8 @@
 3. `DATABASE_URL`, `RAID_INVITE_CODE`, (처음 한 번) `ADMIN_BOOTSTRAP_PASSWORD`를 입력해요.
 4. 배포 과정
    - `build.sh`: 패키지 설치 → `collectstatic` → `check --deploy`
-   - `start.sh`: `migrate` → `seed_questions` → `bootstrap_admin` → Gunicorn 실행
+   - `start.sh`: `prepare_runtime`(`migrate` → `clearsessions` → `seed_questions` → `bootstrap_admin`을 한 프로세스에서 실행) → Gunicorn 실행
+   - 무료 플랜은 잠들었다 깨어날 때마다 `start.sh`를 다시 실행해요. Django를 한 번만 띄워서 깨어나는 시간을 줄였어요.
 5. 배포 후 확인
    - `/healthz/`가 `ok`를 반환하는지 확인해요(DB 연결까지 확인해요).
    - 서로 다른 브라우저 두 개로 접속해서 보스 HP가 공유되는지 확인해요.
@@ -42,6 +43,7 @@
 ```bash
 python manage.py seed_questions         # 문제 시딩 (멱등)
 python manage.py bootstrap_admin        # 환경변수로 초기 관리자 1회 생성
+python manage.py prepare_runtime        # 서버 시작 시 위 작업과 migrate · clearsessions를 한 번에 실행
 python manage.py reset_raid --confirm   # 제출 · 해결 기록 삭제, 보스 HP 초기화 (참여자 · 문제는 유지)
 ```
 
@@ -58,7 +60,7 @@ python manage.py reset_raid --confirm   # 제출 · 해결 기록 삭제, 보스
 - **실제 운영 데이터**: `Player`, `Attempt`, `Clear`, `RaidState`는 기존 Neon PostgreSQL에 유지되며, `RAID_DEMO_MODE=1`에서는 신규 체험자가 이 테이블을 변경하지 않아요.
 - **체험 진행 데이터**: 정답 확인 상태·문제별 시도 횟수·체험 완료 미션을 `bughunters_demo` **서명 쿠키**에 저장해요. 이 쿠키는 로그인 인증에 절대 사용하지 않으며 30일 후 만료돼요. 브라우저별 체험 기록만 담아 변경하거나 삭제해도 실제 행사에는 영향이 없어요.
 - **관리자 로그인**: Django 기본 DB 세션을 그대로 사용해 관리자 인증을 보호해요. `SESSION_SAVE_EVERY_REQUEST=False`로 변경되지 않은 인증 세션은 매 요청마다 다시 저장하지 않아요.
-- **만료 DB 세션 정리**: 배포 시작 시 `python manage.py clearsessions`를 실행해 만료된 세션만 삭제해요. 별도 정기 스케줄링은 구현하지 않았으며, 장기간 배포가 없으면 정기 정리가 필요할 수 있어요.
+- **만료 DB 세션 정리**: 서버가 시작될 때마다(배포, 그리고 무료 플랜에서 잠들었다 깨어날 때) `prepare_runtime` 안에서 `clearsessions`를 실행해 만료된 세션만 삭제해요. 별도 정기 스케줄링은 구현하지 않았으며, 장기간 배포가 없으면 정기 정리가 필요할 수 있어요.
 - **주의**: 체험 페이지는 문제·보스·통계 조회를 위해 DB **읽기**를 수행해요. '전체 DB 접속 또는 쓰기 0회'가 아니라 **체험 기록으로 운영 테이블에 쓰지 않으며 익명 체험 진행 상태는 DB 세션에 기록하지 않는다**는 의미예요.
 - 기존 방문자의 DB 세션 기반 체험 진행 상태는 새 방식으로 이전하지 않아요. 배포 후 기존 이용자의 체험 진행 상태는 0개로 시작할 수 있어요.
 
