@@ -13,6 +13,7 @@
 | `RAID_INVITE_CODE` | 반 참여 코드. 서버에서만 확인하고 HTML에는 넣지 않아요 |
 | `RAID_MAX_HP` / `RAID_DAMAGE` / `RAID_MAX_CLEARS_PER_PLAYER` | 보스 HP(1000) / 1회 데미지(20) / 1인 공격 상한(3) |
 | `RAID_RESULTS_PUBLIC` | `1`이면 격파 전에도 리포트를 공개해요 |
+| `RAID_DEMO_MODE` | 행사 종료 후 `1`로 설정하면 신규 가입·실제 기록 쓰기를 막고 익명 체험만 제공해요 |
 | `ADMIN_BOOTSTRAP_PASSWORD` | 16자 이상. 첫 배포 때 관리자 계정을 만든 뒤 **바로 삭제**해요 |
 
 > Neon 접속 문자열, 시크릿 키, 참여 코드는 절대 커밋하지 않아요.
